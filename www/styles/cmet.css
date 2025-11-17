@@ -1,0 +1,177 @@
+body {
+    font-family: 'Lexend';
+    background-color: #000;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+}
+
+header {
+    background-color: #000; /* Azul Carris */
+    color: #ffdd00;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+main {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+/* --- Secção de Input --- */
+.input-section {
+    background-color: #333;
+    color: #fff;
+    padding: 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+}
+
+a {
+    cursor: pointer;
+}
+
+img {
+    float: center;
+}
+
+#stops-form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Inclui padding e border no width total */
+    font-size: 16px;
+    resize: vertical;
+}
+
+#search-button {
+    background-color: #ffdd00; /* Verde para ação */
+    color: #000;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 17px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+#search-button:hover:not(:disabled) {
+    background-color: #b49c00;
+    color: #fff
+}
+
+#search-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+#loading-spinner {
+    font-style: italic;
+    color: #fff;
+}
+
+/* --- Secção de Resultados --- */
+.results-section h2 {
+    border-bottom: 2px solid #fff;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+#results-container {
+    display: grid;
+    gap: 20px;
+}
+
+.stop-arrival {
+    background-color: #333;
+    border: 3px solid #ffdd00;
+    padding: 15px;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.stop-arrival h3 {
+    margin-top: 0;
+    color: #ffdd00;
+    font-size: 1.2em;
+    padding-bottom: 5px;
+    border-bottom: 1px dashed #eee;
+}
+
+.stop-arrival ul {
+    list-style: none;
+    padding: 0;
+    margin-top: 10px;
+}
+
+.stop-arrival ul li {
+    padding: 8px 0;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 1px dotted #f0f0f0;
+    align-items: center;
+}
+
+.stop-arrival ul li:last-child {
+    border-bottom: none;
+}
+
+.line-number {
+    font-weight: bold;
+    color: #dc3545; /* Vermelho para a linha */
+    min-width: 40px;
+    text-align: left;
+}
+
+.destination {
+    flex-grow: 1;
+    margin-left: 10px;
+}
+
+.wait-time {
+    font-weight: bold;
+    color: #28a745; /* Verde para o tempo */
+    background-color: #000;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    min-width: 70px;
+    text-align: center;
+}
+
+.no-arrivals, .placeholder-text {
+    font-style: italic;
+    color: #6c757d;
+}
+
+.error-message {
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.error-label {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    font-weight: normal;
+    margin-left: 10px;
+}
+
+/* --- Rodapé --- */
+footer {
+    text-align: center;
+    padding: 15px;
+    margin-top: 30px;
+    border-top: 1px solid #eee;
+    color: #6c757d;
+    font-size: 0.9em;
+}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBST Carris Metropolitana</title>
+    <link href='https://fonts.googleapis.com/css?family=Lexend' rel='stylesheet'>
+    <link rel="stylesheet" href="styles/cmet.css">
+</head>
+<body>
+    <header>
+        <h1>⏰ MBST Carris Metropolitana - Tempos de Espera ⏰</h1>
+    </header>
+    
+    <main>
+        <section class="input-section">
+            <h2>Escolha as Paragens</h2>
+            <p>Introduza os IDs das paragens (separados por vírgulas).</p>
+            <a onclick="showID()">ID?</a>
+
+            <form id="stops-form">
+                <textarea id="stop-ids" rows="3" placeholder="IDs das paragens (separados por vírgula)"></textarea>
+                <button type="submit" id="search-button">
+                    <span id="button-text">Consultar Tempos</span>
+                    <span id="loading-spinner" style="display:none;">A carregar...</span>
+                </button>
+            </form>
+        </section>
+
+        <section class="results-section">
+            <h2>Resultados</h2>
+            <div id="results-container">
+                <p class="placeholder-text">Introduza os IDs das paragens e clique em "Consultar Tempos" para ver os resultados.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Dados fornecidos pela API da Carris Metropolitana.</p>
+    </footer>
+
+    <script src="scripts/cmet.js"></script>
+</body>
+</html>
