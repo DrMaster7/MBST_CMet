@@ -7,7 +7,7 @@ body {
 }
 
 header {
-    background-color: #000; /* Azul Carris */
+    background-color: #000;
     color: #ffdd00;
     padding: 20px;
     text-align: center;
@@ -20,7 +20,7 @@ main {
     padding: 0 20px;
 }
 
-/* --- Secção de Input --- */
+/* --- Input --- */
 .input-section {
     background-color: #333;
     color: #fff;
@@ -34,18 +34,15 @@ a {
     cursor: pointer;
 }
 
-img {
-    float: center;
-}
-
 #stops-form textarea {
+    font-family: 'Lexend';
     width: 100%;
     padding: 10px;
     margin-top: 15px;
     margin-bottom: 15px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-sizing: border-box; /* Inclui padding e border no width total */
+    box-sizing: border-box; 
     font-size: 16px;
     resize: vertical;
 }
@@ -60,6 +57,7 @@ img {
     font-size: 17px;
     font-weight: bold;
     transition: background-color 0.3s;
+    margin-right: 10px; 
 }
 
 #search-button:hover:not(:disabled) {
@@ -75,6 +73,7 @@ img {
 #loading-spinner {
     font-style: italic;
     color: #fff;
+    margin-left: 10px;
 }
 
 /* --- Secção de Resultados --- */
@@ -82,8 +81,12 @@ img {
     border-bottom: 2px solid #fff;
     padding-bottom: 10px;
     margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
+/* Container de resultados para o modo individual */
 #results-container {
     display: grid;
     gap: 20px;
@@ -171,7 +174,7 @@ footer {
     text-align: center;
     padding: 15px;
     margin-top: 30px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid #6c757d; 
     color: #6c757d;
     font-size: 0.9em;
 }
