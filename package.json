@@ -1,0 +1,16 @@
+{
+  "name": "Multiple Bus Stop Tracker (CMet)",
+  "version": "1.0.0",
+  "description": "Uma aplicação que consiste num rastreador de múltiplas paragens de autocarro (MBST) da rede da Carris Metropolitana",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "DrMaster7",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.1",
+    "path": "^0.12.7"
+  }
+}

@@ -1,12 +1,17 @@
+// Carrega as variáveis do arquivo .env para o process.env
+require('dotenv').config();
+
 const express = require('express');
 const fetch = require('node-fetch');
 const path = require('path');
-
 const app = express();
-const CMET_API_BASE = 'https://api.carrismetropolitana.pt/'; // API base
+
+// Usa a variável de ambiente OU a string hardcoded como fallback (caso o .env falhe)
+const CMET_API_BASE = process.env.CMET_API_BASE || 'https://api.carrismetropolitana.pt/'; // Link base da API
 const CMET_ARRIVALS_API = 'v2/arrivals/by_stop/' // API que retorna as chegadas por paragem
 const CMET_STOPS_API = 'v2/stops'; // API que retorna as paragens
 const CMET_PATTERNS_API = 'patterns/'; // API para retornar as patterns de linha
+const PORT = process.env.PORT || 8081;
 
 // Middleware para servir ficheiros estáticos da pasta 'www'
 app.use(express.static(path.join(__dirname, 'www')));
@@ -216,6 +221,6 @@ app.post('/api/arrivals', async (req, res) => {
 });
 
 // Início do servidor
-app.listen(8081, () => {
-    console.log('Para iniciar, visite http://localhost:8081');
+app.listen(PORT, () => {
+    console.log(`Servidor a correr na porta ${PORT}. Para iniciar, visite http://localhost:${PORT}`);
 });
