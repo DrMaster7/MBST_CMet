@@ -6,12 +6,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const searchButton = document.getElementById('search-button');
     const buttonText = document.getElementById('button-text');
     const loadingSpinner = document.getElementById('loading-spinner');
+    const toggleViewButton = document.getElementById('toggle-view-button');
 
     const REFRESH_INTERVAL = 10000; 
     let refreshTimer = null; 
     let lastSearchStopIds = null; 
     let lastSuccessfulData = null; 
 
+    let currentViewMode = 'individual'; 
+    toggleViewButton.textContent = 'Ver Tabela Mestre';
 
     /**
      * Renderiza os dados de chegadas por paragem individualmente.
@@ -60,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <th>Destino</th>
                                     <th>Tempo de Espera</th>
                                     <th>Hora de Passagem</th>
-                                    <th>Tipo</th>
+                                    <th>Tipo de Horário</th>
                                 </tr>
                             </thead>
                         <tbody>
@@ -134,15 +137,160 @@ document.addEventListener('DOMContentLoaded', () => {
             container.appendChild(stopDiv);
         });
     }
+
+    /**
+     * Renderiza os dados de chegadas numa única tabela.
+     * @param {Array<Object>} results - Array de resultados da API.
+     * @param {HTMLElement} container - O contentor onde os resultados serão inseridos.
+     */
+    function renderMasterTable(results, container) {
+        container.innerHTML = ''; 
+
+        toggleViewButton.style.display = (results.length > 0 && results.some(r => r.data && r.data.length > 0)) ? 'inline-block' : 'none'; 
+
+        let allFutureArrivals = [];
+        let hasError = false;
+
+        results.forEach(result => {
+            if (result.error) {
+                hasError = true;
+            } else {
+                const stopId = result.stopId;
+                const stopName = result.stopName || `Paragem ${stopId} (Nome Desconhecido)`;
+                const allArrivals = result.data || [];
+                let futureArrivals = allArrivals.filter(isFutureArrival);
+                
+                futureArrivals = futureArrivals.map(arrival => ({
+                    ...arrival,
+                    originStopId: stopId,
+                    originStopName: stopName
+                }));
+                
+                allFutureArrivals.push(...futureArrivals);
+            }
+        });
+
+        const masterDiv = document.createElement('div');
+        masterDiv.classList.add('stop-arrival');
+
+        // Obter a lista de IDs consultados
+        const stopIdsList = results.map(r => r.stopId).join(', ');
+        masterDiv.innerHTML = `<h3>Paragens Consultadas: ${stopIdsList}</h3>`;
+
+        if (hasError) {
+            masterDiv.innerHTML += '<p class="error-message">Algumas paragens retornaram erros. Apenas as chegadas válidas são mostradas.</p>';
+        }
+
+        if (allFutureArrivals.length === 0) {
+            masterDiv.innerHTML += '<p class="no-arrivals">Nenhum autocarro calendarizado em nenhuma das paragens nos próximos 60 minutos.</p>';
+            container.appendChild(masterDiv);
             return;
         }
 
-        // Mostrar estado de carregamento
-        searchButton.disabled = true;
-        buttonText.style.display = 'none';
-        loadingSpinner.style.display = 'inline';
-        resultsContainer.innerHTML = ''; // Limpa resultados anteriores
-        resultsContainer.innerHTML = '<p>A carregar dados...</p>';
+        // Ordenação de todos os resultados cronologicamente
+        allFutureArrivals.sort(compareArrivals);
+        
+        // Limita o número de resultados aos próximos 10
+        const arrivalsToShow = allFutureArrivals.slice(0, 10);
+
+        let tableHtml = `
+            <table class="master-arrivals-table">
+                <thead>
+                    <tr>
+                        <th>Linha</th>
+                        <th>Destino</th>
+                        <th>Paragem</th>
+                        <th>Tempo de Espera</th>
+                        <th>Hora de Passagem</th>
+                        <th>Tipo de Horário</th>
+                    </tr>
+                </thead>
+            <tbody>
+        `;
+
+        arrivalsToShow.forEach(arrival => {
+            let waitTime;
+            let arrivalTime;
+            let statusText = '';
+            let statusClass = ''; 
+            const lineNumber = arrival.line_id || '----';
+            const destination = arrival.headsign || arrival.destination || 'Desconhecido';
+
+            if (arrival.estimated_arrival_unix) {
+                const secondsToArrival = Math.max(0, Math.floor((arrival.estimated_arrival_unix * 1000 - Date.now()) / 1000));
+                waitTime = formatWaitTime(secondsToArrival);
+                arrivalTime = formatArrivalTime(arrival.estimated_arrival);
+                
+                let isDelayed = false;
+                let isAhead = false;
+                if (arrival.scheduled_arrival) {
+                    const scheduledDate = parseScheduledTime(arrival.scheduled_arrival, true);
+                    const estimatedDateTimestamp = arrival.estimated_arrival_unix * 1000;
+                    if (estimatedDateTimestamp > scheduledDate + 60000) { 
+                        isDelayed = true;
+                    } else if (estimatedDateTimestamp < scheduledDate - 60000) { 
+                        isAhead = true;
+                    }
+                }
+                if (isDelayed) {
+                    statusText = 'Real (Atrasado)';
+                    statusClass = 'status-delayed';
+                } else if (isAhead) {
+                    statusText = 'Real (Adiantado)';
+                    statusClass = 'status-ahead';
+                } else {
+                    statusText = 'Real';
+                    statusClass = 'status-realtime';
+                }
+            } else {
+                // Lógica para chegadas calendarizadas
+                const scheduledTimestamp = parseScheduledTime(arrival.scheduled_arrival, true);
+                const secondsToArrival = Math.max(0, Math.floor((scheduledTimestamp - Date.now()) / 1000));
+                
+                waitTime = formatWaitTime(secondsToArrival);
+                arrivalTime = formatArrivalTime(arrival.scheduled_arrival);
+                statusText = 'Calendarizado';
+                statusClass = 'status-scheduled';
+            }
+            
+            tableHtml += `
+                <tr class="${statusClass}">
+                    <td>${lineNumber}</td>
+                    <td>${destination}</td>
+                    <td>${arrival.originStopId}</td>
+                    <td>${waitTime}</td>
+                    <td>${arrivalTime}</td>
+                    <td>${statusText}</td>
+                </tr>
+            `;
+        });
+
+        tableHtml += `
+                </tbody>
+            </table>
+        `;
+        
+        masterDiv.innerHTML += tableHtml;
+        container.appendChild(masterDiv);
+    }
+
+    function clearRefreshTimer() {
+        if (refreshTimer) {
+            clearInterval(refreshTimer);
+            refreshTimer = null;
+        }
+    }
+
+    async function fetchAndRenderArrivals(stopIds, isManualSearch = false) {
+        clearRefreshTimer(); 
+        lastSearchStopIds = stopIds; 
+
+        if (isManualSearch) {
+            searchButton.disabled = true;
+            buttonText.style.display = 'none';
+            loadingSpinner.style.display = 'inline';
+            resultsContainer.innerHTML = '<p>A carregar dados...</p>';
+        }
 
         try {
             // Pedido ao servidor proxy (Node.js)
@@ -157,8 +305,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (response.ok) {
-                // Renderização dos resultados
-                renderResults(data, resultsContainer);
+                lastSuccessfulData = data; 
+                if (currentViewMode === 'master') {
+                    renderMasterTable(lastSuccessfulData, resultsContainer);
+                } else {
+                    renderIndividualResults(lastSuccessfulData, resultsContainer); 
+                }
             } else {
                 if (isManualSearch) {
                     resultsContainer.innerHTML = `<p class="error-message">Erro na consulta: ${data.error || 'Erro desconhecido no servidor.'}</p>`;
@@ -188,6 +340,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
+
+    function toggleViewMode() {
+        if (!lastSuccessfulData) return; 
+
+        if (currentViewMode === 'individual') {
+            currentViewMode = 'master';
+            toggleViewButton.textContent = 'Ver Tabela por Paragem';
+            renderMasterTable(lastSuccessfulData, resultsContainer);
+        } else {
+            currentViewMode = 'individual';
+            toggleViewButton.textContent = 'Ver Tabela Mestra';
+            renderIndividualResults(lastSuccessfulData, resultsContainer);
+        }
+    }
+    
+    toggleViewButton.addEventListener('click', toggleViewMode);
+
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
