@@ -27,7 +27,9 @@ let cacheLoaded = false;
  */
 async function loadStopNames() {
     if (cacheLoaded) return;
+    
     console.log('A carregar nomes de paragens da API...');
+
     try {
         const response = await fetch(`${CMET_API_BASE}${CMET_STOPS_API}`);
         if (response.ok) {
@@ -56,20 +58,23 @@ async function loadStopNames() {
  */
 async function getFinalStopId(patternId) {
     if (!patternId) return null;
+
     if (patternStopFinalCache[patternId]) return patternStopFinalCache[patternId];
 
     try {
         const response = await fetch(`${CMET_API_BASE}${CMET_PATTERNS_API}${patternId}`);
+
         if (!response.ok) {
             console.warn(`Pattern API falhou para ${patternId}: Status ${response.status} - ${response.statusText}`);
             return null; // Retorna null para sinalizar falha na API
         }
+
         const patternData = await response.json();
         const patternPath = patternData.path;
 
         if (Array.isArray(patternPath) && patternPath.length > 0) {
             const finalStopContainer = patternPath[patternPath.length - 1];
-            // Tenta obter o ID, priorizando 'id' ou 'stop_id' do objeto da paragem
+            // Tenta obter o ID, priorizando o 'id' ou o 'stop_id' do objeto da paragem.
             const finalStopId = String(finalStopContainer.stop?.id || finalStopContainer.stop?.stop_id || null);
             if (finalStopId && finalStopId !== 'null') {
                 patternStopFinalCache[patternId] = finalStopId;
@@ -95,6 +100,7 @@ async function getFinalStopId(patternId) {
 let allStopsDetailsCache = null;
 async function getpatternIdsForStop(stopId) {
     if (!stopId) return [];
+
     const key = String(stopId);
 
     // Prioriza a cache específica da paragem (populada anteriormente)
@@ -105,21 +111,20 @@ async function getpatternIdsForStop(stopId) {
         try {
             const response = await fetch(`${CMET_API_BASE}${CMET_STOPS_API}`); // Chamada da API
             if (response.ok) {
-                // Assume-se que a API devolve um array ou objeto que contém todos os detalhes
+                // Assume-se que a API devolve um array ou objeto que contém todos os detalhes.
                 allStopsDetailsCache = await response.json();
             } else {
                 // Em caso de falha na chamada, preenche cache geral como vazia para evitar novas chamadas.
                 allStopsDetailsCache = {}; 
             }
         } catch (err) {
-            // Em caso de erro de rede, preenche cache geral como vazia
+            // Em caso de erro de rede, preenche cache geral como vazia.
             allStopsDetailsCache = {};
         }
     }
 
-    // Procura os detalhes da paragem no resultado da API (allStopsDetailsCache)
+    // Procura os detalhes da paragem no resultado da API (allStopsDetailsCache).
     // Assume-se que a cache é um Array de objetos ou um Objeto onde a chave é o Stop ID.
-
     let stopDetails = null;
 
     if (Array.isArray(allStopsDetailsCache)) {
@@ -127,13 +132,9 @@ async function getpatternIdsForStop(stopId) {
         stopDetails = allStopsDetailsCache.find(stop => String(stop.id) === key || String(stop.stopId) === key);
     } else if (typeof allStopsDetailsCache === 'object' && allStopsDetailsCache !== null) {
         // Exemplo: A API devolve um Objeto (Map/Dictionary) onde a chave é o ID.
-        stopDetails = allStopsDetailsCache[key]; 
-        
-        // Se a API tiver uma chave específica (ex: 'stops') que contém o Map/Array.
-        // if (allStopsDetailsCache.stops && allStopsDetailsCache.stops[key]) {
-        //     stopDetails = allStopsDetailsCache.stops[key];
-        // }
+        stopDetails = allStopsDetailsCache[key];
     }
+
     // Extrai os pattern IDs e preenche a cache específica.
     if (stopDetails) {
         const patterns = stopDetails.pattern_ids || stopDetails.patterns || [];
@@ -143,13 +144,13 @@ async function getpatternIdsForStop(stopId) {
             return patternsString;
         }
     }
+
     // Se não for encontrado na cache específica ou na cache geral, marca como vazio na cache específica para evitar repetição (Fail-fast).
     if (!stopPatternCache[key]) {
         stopPatternCache[key] = []; 
     }
     return stopPatternCache[key];
 }
-
 
 // Rota de proxy para a API da Carris Metropolitana
 app.post('/api/arrivals', async (req, res) => {
@@ -164,7 +165,6 @@ app.post('/api/arrivals', async (req, res) => {
 
     try {
         const results = [];
-        
         for (const id of stopIds) {
             const currentStopId = String(id);
             const apiResponse = await fetch(`${CMET_API_BASE}${CMET_ARRIVALS_API}${currentStopId}`);
@@ -175,9 +175,9 @@ app.post('/api/arrivals', async (req, res) => {
             }
 
             const data = await apiResponse.json();
-            const allStopPatterns = await getpatternIdsForStop(currentStopId); // patterns da paragem
+            const allStopPatterns = await getpatternIdsForStop(currentStopId); // Patterns da paragem
             
-            // Pré-resolve finalStopId para todos os patterns da paragem (paralelamente para eficiência)
+            // Pré-resolve finalStopId para todos os patterns da paragem
             const finalStopPromises = allStopPatterns.map(pid => getFinalStopId(pid));
             const finalStopResults = await Promise.all(finalStopPromises);
 
@@ -194,26 +194,23 @@ app.post('/api/arrivals', async (req, res) => {
         
                 if (finalStopId) {
                     const isFinalStop = String(finalStopId) === currentStopId;
-                    // Se for a paragem final, filtramos (return false).
+                    // Se for a paragem final, filtra-se de maneira a não aparecer nas tabelas.
                     if (isFinalStop) {
                         return false; 
                     }
-                    return true; // true se NÃO for a paragem final (mantém a chegada)
+                    return true; // true se NÃO for a paragem final (aparece nas tabelas).
                 }
-                return true; // Fallback: Mantém se o destino final não for conhecido por segurança
+                return true; // Fallback: Mantém se o destino final não for conhecido (pouco provável mas mantém-se por segurança),
             });
             results.push({ stopId: currentStopId, data: filteredArrivals });
         }
-
         const finalResults = results.map(result => {
             if (result.data) {
                 result.stopName = stopNameCache[result.stopId] || `Nome Desconhecido / Paragem ${result.stopId}`;
             }
             return result;
         });
-        
         res.json(finalResults);
-
     } catch (error) {
         console.error('Erro no proxy da API da Carris Metropolitana:', error);
         res.status(500).json({ error: 'Erro interno do servidor ao comunicar com a API externa.' });

@@ -43,10 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             } else {
                 const allArrivals = result.data || [];
-                // Filtra e ordena todas as chegadas futuras (incluindo calendarizadas)
+
+                // Filtração e ordenação de todas as chegadas futuras (em tempo real ou calendarizado)
                 let futureArrivals = allArrivals.filter(isFutureArrival);
                 futureArrivals.sort(compareArrivals);
-                // Limita a 10 resultados, o que é o comportamento esperado.
+        
+                // Limita o número de resultados às próximas 10 chegadas
                 const arrivals = futureArrivals.slice(0, 10);
                 
                 let arrivalsHtml = '';
@@ -77,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         const lineNumber = arrival.line_id || '----';
                         const destination = arrival.headsign || arrival.destination || 'Desconhecido';
 
-                        if (arrival.estimated_arrival_unix) {
+                        if (arrival.estimated_arrival_unix) { // Caso as chegadas sejam em tempo real
                             const secondsToArrival = Math.max(0, Math.floor((arrival.estimated_arrival_unix * 1000 - Date.now()) / 1000));
                             waitTime = formatWaitTime(secondsToArrival);
                             arrivalTime = formatArrivalTime(arrival.estimated_arrival);
@@ -103,8 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 statusText = 'Real';
                                 statusClass = 'status-realtime';
                             }
-                        } else {
-                            // Lógica para chegadas calendarizadas
+                        } else { // Caso as chegadas sejam calendarizadas (não sejam em tempo real)
                             const scheduledTimestamp = parseScheduledTime(arrival.scheduled_arrival, true);
                             const secondsToArrival = Math.max(0, Math.floor((scheduledTimestamp - Date.now()) / 1000));
                             
@@ -173,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const masterDiv = document.createElement('div');
         masterDiv.classList.add('stop-arrival');
 
-        // Obter a lista de IDs consultados
+        // Obtém a lista de IDs consultados
         const stopIdsList = results.map(r => r.stopId).join(', ');
         masterDiv.innerHTML = `<h3>Paragens Consultadas: ${stopIdsList}</h3>`;
 
@@ -187,12 +188,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Ordenação de todos os resultados cronologicamente
+        // Filtração e ordenação de todos os resultados de forma cronológica
         allFutureArrivals.sort(compareArrivals);
         
-        // Limita o número de resultados aos próximos 10
+        // Limita o número de resultados às próximas 10 chegadas
         const arrivalsToShow = allFutureArrivals.slice(0, 10);
 
+        // Estrutura da tabela
         let tableHtml = `
             <table class="master-arrivals-table">
                 <thead>
@@ -216,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const lineNumber = arrival.line_id || '----';
             const destination = arrival.headsign || arrival.destination || 'Desconhecido';
 
-            if (arrival.estimated_arrival_unix) {
+            if (arrival.estimated_arrival_unix) { // Caso as chegadas sejam em tempo real
                 const secondsToArrival = Math.max(0, Math.floor((arrival.estimated_arrival_unix * 1000 - Date.now()) / 1000));
                 waitTime = formatWaitTime(secondsToArrival);
                 arrivalTime = formatArrivalTime(arrival.estimated_arrival);
@@ -242,8 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     statusText = 'Real';
                     statusClass = 'status-realtime';
                 }
-            } else {
-                // Lógica para chegadas calendarizadas
+            } else { // Caso as chegadas sejam calendarizadas (não sejam em tempo real)
                 const scheduledTimestamp = parseScheduledTime(arrival.scheduled_arrival, true);
                 const secondsToArrival = Math.max(0, Math.floor((scheduledTimestamp - Date.now()) / 1000));
                 
@@ -330,11 +331,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadingSpinner.style.display = 'none';
             }
             
-            // Recria o timer apenas se tivermos IDs válidos para pesquisar
+            // Recria o timer apenas se tiver IDs válidos para pesquisar.
             if (lastSearchStopIds && lastSearchStopIds.length > 0) {
                 refreshTimer = setInterval(() => {
                     console.log('Refresh automático...');
-                    // Chama a função novamente, mas marca como NÃO sendo uma pesquisa manual.
+                    // Chama a função novamente, marcando como um refresh automático.
                     fetchAndRenderArrivals(lastSearchStopIds, false); 
                 }, REFRESH_INTERVAL);
             }
@@ -383,10 +384,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
- * Alerta para indicar o que é o ID?
+ * Alerta simples para indicar o que é o ID?
  */
 function showID() {
-    alert('O ID da paragem é a identificação da paragem (ex: 020001). Ela está localizada na parte superior da página que inclui a paragem, acima do nome da mesma.');
+    alert('O ID de uma paragem é a sua identificação da paragem (ex: 020001). No website, está localizada na parte superior da página de x paragem, acima do nome da mesma. No terreno, está localizada na parte inferior direita dos postaletes com a lista de linhas.');
 }
 
 /**
@@ -426,15 +427,14 @@ function isFutureArrival(arrival) {
 
     if (arrival.estimated_arrival_unix) {
         arrivalTimestamp = arrival.estimated_arrival_unix * 1000; 
-    } 
-    else if (arrival.scheduled_arrival) {
+    } else if (arrival.scheduled_arrival) {
         arrivalTimestamp = parseScheduledTime(arrival.scheduled_arrival, true); 
     } else {
         return false;
     }
 
-    // A chegada tem de ser: Não mais do que 5 segundos no passado (para evitar que seja 
-    // filtrada no momento da passagem) e dentro do limite de 60 minutos no futuro.
+    // A chegada tem de ser: Não mais do que 5 segundos no passado (para evitar que seja filtrada no momento da passagem) 
+    // e dentro do limite de 60 minutos no futuro (chegadas acima disso não são importantes no momento).
     return arrivalTimestamp > (now - 5000) && arrivalTimestamp <= futureLimit;
 }
 
@@ -454,6 +454,7 @@ function compareArrivals(a, b) {
 
 function parseScheduledTime(timeString, returnTimestamp = false) {
     const now = new Date();
+
     // Cria uma data de referência para HOJE (meia-noite local)
     const todayReference = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
@@ -465,6 +466,7 @@ function parseScheduledTime(timeString, returnTimestamp = false) {
 
     // Ajusta as horas para a representação normal de 0-23
     let hours = originalHours % 24; 
+
     let scheduledDate = new Date(
         todayReference.getFullYear(),
         todayReference.getMonth(),
@@ -476,9 +478,9 @@ function parseScheduledTime(timeString, returnTimestamp = false) {
 
     let arrivalTimestamp = scheduledDate.getTime();
     
-    // Trata Horários do Dia (ex: 10:00:00 às 09:55:00)
-    // Se o horário calculado (após o tratamento de 24h+) já tiver passado no dia de hoje, assumimos que é uma partida de amanhã.
-    // Usamos um buffer de 5 minutos (5 * 60 * 1000) para manter o autocarro no ecrã um pouco depois de passar.
+    // Trata os horários do dia (ex: 10:00:00 às 09:55:00). 
+    // Se o horário calculado (após o tratamento das 24h) já tiver passado no dia de hoje, assume-se que é uma partida de amanhã.
+    // Usa-se um buffer de 5 minutos (5 * 60 * 1000) para manter o autocarro no ecrã um pouco depois de passar.
     if (arrivalTimestamp < now.getTime() - (5 * 60 * 1000) ) {
         arrivalTimestamp += (24 * 60 * 60 * 1000);
     }
