@@ -293,6 +293,9 @@ document.addEventListener('DOMContentLoaded', () => {
             resultsContainer.innerHTML = '<p>A carregar dados...</p>';
         }
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         try {
             // Pedido ao servidor proxy (Node.js)
             const response = await fetch('/api/arrivals', {
@@ -300,8 +303,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ stopIds: stopIds })
+                body: JSON.stringify({ stopIds: stopIds }),
+                signal: controller.signal // Liga o sinal de abortar ao fetch
             });
+        
+            clearTimeout(timeoutId); // Limpa o timer se a resposta chegar a tempo
 
             const data = await response.json();
 
@@ -320,9 +326,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         } catch (error) {
-            console.error('Erro ao comunicar com o servidor:', error);
-            if (isManualSearch) {
-                resultsContainer.innerHTML = '<p class="error-message">Ocorreu um erro ao ligar-se ao servidor (verifique se o Node.js está a correr).</p>';
+            if (error.name === 'AbortError') {
+                console.error('Tempo limite excedido.');
+                if (isManualSearch) {
+                    resultsContainer.innerHTML = '<p class="error-message">O servidor demorou muito a responder. Espere uns segundos e tente novamente.</p>';
+                }
+            } else {
+                console.error('Erro ao comunicar com o servidor:', error);
+                if (isManualSearch) {
+                    resultsContainer.innerHTML = '<p class="error-message">Ocorreu um erro ao ligar-se ao servidor (verifique se o Node.JS está a correr).</p>';
+                }
             }
         } finally {
             if (isManualSearch) {

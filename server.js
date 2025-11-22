@@ -31,7 +31,7 @@ async function loadStopNames() {
     console.log('A carregar nomes de paragens da API...');
 
     try {
-        const response = await fetch(`${CMET_API_BASE}${CMET_STOPS_API}`);
+        const response = await fetch(`${CMET_API_BASE}${CMET_STOPS_API}`, { timeout: 10000 });
         if (response.ok) {
             const data = await response.json();
             stopNameCache = data.reduce((acc, stop) => {
@@ -62,7 +62,7 @@ async function getFinalStopId(patternId) {
     if (patternStopFinalCache[patternId]) return patternStopFinalCache[patternId];
 
     try {
-        const response = await fetch(`${CMET_API_BASE}${CMET_PATTERNS_API}${patternId}`);
+        const response = await fetch(`${CMET_API_BASE}${CMET_PATTERNS_API}${patternId}`, { timeout: 5000 });
 
         if (!response.ok) {
             console.warn(`Pattern API falhou para ${patternId}: Status ${response.status} - ${response.statusText}`);
@@ -109,7 +109,7 @@ async function getpatternIdsForStop(stopId) {
     // Se não estiver na cache específica, verifica se a cache geral foi populada
     if (allStopsDetailsCache === null) {
         try {
-            const response = await fetch(`${CMET_API_BASE}${CMET_STOPS_API}`); // Chamada da API
+            const response = await fetch(`${CMET_API_BASE}${CMET_STOPS_API}`, { timeout: 10000 }); // Chamada da API
             if (response.ok) {
                 // Assume-se que a API devolve um array ou objeto que contém todos os detalhes.
                 allStopsDetailsCache = await response.json();
@@ -158,7 +158,7 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 // Função para processar uma única paragem
 async function fetchSingleStopData(currentStopId) {
     try {
-        const apiResponse = await fetch(`${CMET_API_BASE}${CMET_ARRIVALS_API}${currentStopId}`);
+        const apiResponse = await fetch(`${CMET_API_BASE}${CMET_ARRIVALS_API}${currentStopId}`, { timeout: 8000 });
         
         if (apiResponse.status === 429) {
             return { stopId: currentStopId, error: 'Muitos pedidos feitos. Tente novamente mais tarde.' }; // Retorna erro 429.
