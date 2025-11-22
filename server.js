@@ -152,68 +152,94 @@ async function getpatternIdsForStop(stopId) {
     return stopPatternCache[key];
 }
 
-// Rota de proxy para a API da Carris Metropolitana
+// Variável auxiliar para fazer uma pausa nos pedidos, evitando que sobrecarregue os pedidos na API.
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Função para processar uma única paragem
+async function fetchSingleStopData(currentStopId) {
+    try {
+        const apiResponse = await fetch(`${CMET_API_BASE}${CMET_ARRIVALS_API}${currentStopId}`);
+        
+        if (apiResponse.status === 429) {
+            return { stopId: currentStopId, error: 'Muitos pedidos feitos. Tente novamente mais tarde.' }; // Retorna erro 429.
+        }
+
+        if (!apiResponse.ok) {
+            return { stopId: currentStopId, error: `Erro API: ${apiResponse.status}` };
+        }
+
+        const data = await apiResponse.json();
+        const allStopPatterns = await getpatternIdsForStop(currentStopId);
+        
+        const finalStopPromises = allStopPatterns.map(pid => getFinalStopId(pid));
+        const finalStopResults = await Promise.all(finalStopPromises);
+
+        const finalStopMap = {};
+        allStopPatterns.forEach((pid, index) => {
+            if (finalStopResults[index]) finalStopMap[pid] = finalStopResults[index];
+        });
+
+        const filteredArrivals = data.filter(arrival => {
+            const finalStopId = finalStopMap[arrival.pattern_id];
+            if (finalStopId) {
+                return String(finalStopId) !== currentStopId;
+            }
+            return true;
+        });
+
+        return { stopId: currentStopId, data: filteredArrivals };
+
+    } catch (error) {
+        console.error(`Erro ao processar paragem ${currentStopId}:`, error);
+        return { stopId: currentStopId, error: 'Erro interno no servidor.' };
+    }
+}
+
 app.post('/api/arrivals', async (req, res) => {
     if (!cacheLoaded) await loadStopNames();
     
     const { stopIds } = req.body;
 
-    // Se nenhum ID for fornecido
     if (!Array.isArray(stopIds) || stopIds.length === 0) {
         return res.status(400).json({ error: 'Nenhum ID de paragem fornecido.' });
     }
 
+    const CONCURRENCY_LIMIT = 5; // Número de pedidos feito ao mesmo tempo (5 é rápido ao mesmo tempo que não sobrecarrega a API)
+    const DELAY_BETWEEN_BATCHES = 200; // Milissegundos de pausa entre lotes (evitando spam e sobrecarga)
+
     try {
         const results = [];
-        for (const id of stopIds) {
-            const currentStopId = String(id);
-            const apiResponse = await fetch(`${CMET_API_BASE}${CMET_ARRIVALS_API}${currentStopId}`);
-            
-            if (!apiResponse.ok) {
-                results.push({ stopId: currentStopId, error: `Erro ao obter dados para o ID ${currentStopId}. Código: ${apiResponse.status}` });
-                continue;
-            }
-
-            const data = await apiResponse.json();
-            const allStopPatterns = await getpatternIdsForStop(currentStopId); // Patterns da paragem
-            
-            // Pré-resolve finalStopId para todos os patterns da paragem
-            const finalStopPromises = allStopPatterns.map(pid => getFinalStopId(pid));
-            const finalStopResults = await Promise.all(finalStopPromises);
-
-            const finalStopMap = {};
-            allStopPatterns.forEach((pid, index) => {
-                const finalId = finalStopResults[index];
-                if (finalId) {
-                    finalStopMap[pid] = finalId;
-                }
-            });
-            const filteredArrivals = data.filter(arrival => {
-                const patternId = arrival.pattern_id;
-                const finalStopId = finalStopMap[patternId]; // Stop ID da última paragem do pattern
         
-                if (finalStopId) {
-                    const isFinalStop = String(finalStopId) === currentStopId;
-                    // Se for a paragem final, filtra-se de maneira a não aparecer nas tabelas.
-                    if (isFinalStop) {
-                        return false; 
-                    }
-                    return true; // true se NÃO for a paragem final (aparece nas tabelas).
-                }
-                return true; // Fallback: Mantém se o destino final não for conhecido (pouco provável mas mantém-se por segurança),
-            });
-            results.push({ stopId: currentStopId, data: filteredArrivals });
+        // Divide o array de IDs em pedaços (chunks) menores
+        for (let i = 0; i < stopIds.length; i += CONCURRENCY_LIMIT) {
+            const chunk = stopIds.slice(i, i + CONCURRENCY_LIMIT);
+            
+            // Inicia os pedidos deste lote em PARALELO
+            const chunkPromises = chunk.map(id => fetchSingleStopData(String(id)));
+            
+            // Espera que este lote termine
+            const chunkResults = await Promise.all(chunkPromises);
+            results.push(...chunkResults);
+
+            // Se ainda houver mais paragens para processar, faz uma pequena pausa
+            if (i + CONCURRENCY_LIMIT < stopIds.length) {
+                await sleep(DELAY_BETWEEN_BATCHES);
+            }
         }
+
+        // Adiciona os nomes das paragens aos resultados finais
         const finalResults = results.map(result => {
             if (result.data) {
-                result.stopName = stopNameCache[result.stopId] || `Nome Desconhecido / Paragem ${result.stopId}`;
+                result.stopName = stopNameCache[result.stopId] || `Paragem ${result.stopId}`;
             }
             return result;
         });
+
         res.json(finalResults);
+
     } catch (error) {
-        console.error('Erro no proxy da API da Carris Metropolitana:', error);
-        res.status(500).json({ error: 'Erro interno do servidor ao comunicar com a API externa.' });
+        console.error('Erro global no proxy:', error);
+        res.status(500).json({ error: 'Erro interno do servidor.' });
     }
 });
 

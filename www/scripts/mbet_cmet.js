@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderMasterTable(lastSuccessfulData, resultsContainer);
         } else {
             currentViewMode = 'individual';
-            toggleViewButton.textContent = 'Ver Tabela Mestra';
+            toggleViewButton.textContent = 'Ver Tabela Mestre';
             renderIndividualResults(lastSuccessfulData, resultsContainer);
         }
     }
