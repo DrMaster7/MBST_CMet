@@ -42,7 +42,7 @@ Recorrendo às linguagens HTML, CSS e JavaScript, o sistema está dividido princ
 ![alt text](www/images/destinos.png)
 - **Carris Metropolitana**
     
-    Todos os dados recebidos vem da API da Carris Metropolitana, incluindo os nomes que a mesma dá para os destinos de cada linha. No caso mostrado, onde as linhas 2772 e 2750 tem nomes diferentes para o mesmo destino (Campo Grande), o resultado mostrado vem diretamente dos dados retornados pela API da Carris Metropolitana, não sendo portanto algo diretamente da responsabilidade do website.
+    Todos os dados recebidos vem da API da Carris Metropolitana, incluindo os nomes que a mesma dá para os destinos de cada linha. No caso mostrado, onde as linhas 2772 e 2750 tem nomes diferentes para o mesmo destino (Campo Grande), o resultado mostrado vem diretamente dos dados retornados pela API da Carris Metropolitana como mencionado, não sendo portanto algo diretamente da responsabilidade do website.
 
 **"Haverá futuras atualizações?"**
 - **Possivelmente**
@@ -129,7 +129,7 @@ Pronto, a aplicação estará pronta a ser usada.
 
     No exemplo que vemos, as linhas 2764, 2812 e 2772 estão adiantadas relativamente ao horário calendarizado, as linhas 2750 e 2751 estão atrasados relativamente ao horário calendarizado, enquanto a linha 4412 está no tempo certo relativamente ao horário calendarizado.
     
-    Todas as restantes linhas (a branco), ou ainda não começaram os seus serviços, tem o tempo real desativado/com erro ou começam nessa paragem (neste caso, nenhuma das três paragens é ponto terminal para uma linha, excluindo a última possibilidade neste caso).
+    Todas as restantes linhas (a branco), ou ainda não começaram os seus serviços, tem o tempo real desativado/com erro ou começam nessa paragem (neste caso, nenhuma das três paragens é ponto terminal para uma linha, excluindo a última possibilidade).
 
     De notar que as tabelas irão apenas mostrar os próximos 10 horários que estejam nos próximos 60 minutos. Caso nenhum resultado seja detetado, irá retornar o resultado da paragem **150101**.
 
@@ -186,7 +186,7 @@ Using HTML, CSS, and JavaScript, the system is mainly divided into four files:
 ![alt text](www/images/destinos.png)
 - **Carris Metropolitana**
     
-    All data received comes from the Carris Metropolitana API, including the names it gives to the destinations of each line. In the case shown, where lines 2772 and 2750 have different names for the same destination (Campo Grande), the result shown comes directly from the data returned by the Carris Metropolitana API, and is therefore not the direct responsibility of the website.
+    All data received comes from the Carris Metropolitana API, including the names it gives to the destinations of each line. In the case shown, where lines 2772 and 2750 have different names for the same destination (Campo Grande), the result shown comes directly from the data returned by the Carris Metropolitana API as mentioned, and is therefore not the direct responsibility of the website.
 
 **“Will there be future updates?”**
 - **Possibly**
@@ -273,7 +273,7 @@ That's it, the application is ready to use.
 
     In the example we see, lines 2764, 2812 and 2772 are ahead of schedule, lines 2750 and 2751 are behind schedule, while line 4412 is on time.
 
-    All other lines (in white) have either not yet started their services, have real time disabled/with an error, or start at that stop (in this case, none of the three stops are the terminal point for a line, excluding the last possibility in this case).
+    All other lines (in white) have either not yet started their services, have real time disabled/with an error, or start at that stop (in this case, none of the three stops are the terminal point for a line, excluding the last possibility).
 
     Please note that the tables will only show the next 10 schedules that are within the next 60 minutes. If no results are found, the result for stop **150101** will be returned.
 
