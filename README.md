@@ -104,7 +104,7 @@ Pronto, a aplicação estará pronta a ser usada.
 
         **Figura 3:** Página da paragem da Figura 2 no site da Carris Metropolitana.
 
-    Também no próprio website terá uma explicação mais simples acerca do ID, clicando no texto "ID?".
+    Caso o utilizador já tenho feita uma pesquisa anteriormente, os dados serão guardados automaticamente numa cookie que guarda os IDs das paragens, garantindo assim que o utilizador não tenha de voltar a escrever os IDs sempre que tenha de reentrar no website.
 
 ---
 
@@ -127,7 +127,7 @@ Pronto, a aplicação estará pronta a ser usada.
 
     - **Branco:** Horário em tempo calendarizado, tempo real inexistente (normalmente aplicável em terminais de linha, como em Cacilhas ou no Campo Grande).
 
-    No exemplo que vemos, as linhas 2764, 2812 e 2772 estão adiantadas relativamente ao horário calendarizado, as linhas 2750 e 2751 estão atrasados relativamente ao horário calendarizado, enquanto a linha 4412 está no tempo certo relativamente ao horário calendarizado.
+    No exemplo que vemos, as linhas 2764, 2772 e 2812 estão adiantadas relativamente ao horário calendarizado, as linhas 2750 e 2751 estão atrasados relativamente ao horário calendarizado, enquanto a linha 4412 está no tempo certo relativamente ao horário calendarizado.
     
     Todas as restantes linhas (a branco), ou ainda não começaram os seus serviços, tem o tempo real desativado/com erro ou começam nessa paragem (neste caso, nenhuma das três paragens é ponto terminal para uma linha, excluindo a última possibilidade).
 
@@ -248,7 +248,7 @@ That's it, the application is ready to use.
 
         **Figure 3:** Page for the stop in Figure 2 on the Carris Metropolitana website.
 
-    The website also provides a simpler explanation of the ID by clicking on the text ‘ID?’.
+    If the user has already performed a search previously, the data will be automatically stored in a cookie that saves the stop IDs, thus ensuring that the user does not have to re-enter the IDs each time they return to the website.
 
 ---
 
@@ -271,7 +271,7 @@ That's it, the application is ready to use.
 
     - **White:** Scheduled timetable, no real-time data available (usually applicable at terminal stops, such as Cacilhas or Campo Grande).
 
-    In the example we see, lines 2764, 2812 and 2772 are ahead of schedule, lines 2750 and 2751 are behind schedule, while line 4412 is on time.
+    In the example we see, lines 2764, 2772 and 2812 are ahead of schedule, lines 2750 and 2751 are behind schedule, while line 4412 is on time.
 
     All other lines (in white) have either not yet started their services, have real time disabled/with an error, or start at that stop (in this case, none of the three stops are the terminal point for a line, excluding the last possibility).
 

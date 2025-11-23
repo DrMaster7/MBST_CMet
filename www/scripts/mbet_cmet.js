@@ -8,13 +8,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingSpinner = document.getElementById('loading-spinner');
     const toggleViewButton = document.getElementById('toggle-view-button');
 
-    const REFRESH_INTERVAL = 10000; 
+    const REFRESH_INTERVAL = 10000; // Intervalo até atualizar (10 segundos)
+    const COOKIE_NAME = 'cmet_search'; // Nome do cookie
+    const COOKIE_DAYS = 365; // Duração do cookie (1 ano)
+    const ENCRYPTION_KEY = 'cmet_key'; // Chave para "baralhar" os dados
+
     let refreshTimer = null; 
     let lastSearchStopIds = null; 
     let lastSuccessfulData = null; 
 
     let currentViewMode = 'individual'; 
     toggleViewButton.textContent = 'Ver Tabela Mestre';
+
+    /**
+     * Lê o cookie encriptado e tenta desencriptar o mesmo. Se for válido, executa e renova.
+     */
+    const encryptedCookie = getCookie(COOKIE_NAME);
+    
+    if (encryptedCookie) {
+        // Tenta desencriptar o valor do cookie
+        const decryptedValue = decryptData(encryptedCookie);
+
+        if (decryptedValue) {
+            // Preenche a textarea com os dados legíveis
+            stopIdsTextarea.value = decryptedValue;
+            
+            // Converte a string num array
+            const initialStopIds = decryptedValue.split(',').map(id => id.trim()).filter(id => id.length > 0);
+            
+            if (initialStopIds.length > 0) {
+                console.log('Cookie válido encontrado. A renovar validade...');
+                
+                // Guarda novamente o valor encriptado para estender a data, garantindo o uso da chave atual.
+                const newEncryptedValue = encryptData(decryptedValue);
+                
+                // Renova automaticamente o cookie, de maneira a evitar expiração futura se o utilizador não fizer nenhuma pesquisa nos próximos 365 dias.
+                setCookie(COOKIE_NAME, newEncryptedValue, COOKIE_DAYS);
+
+                fetchAndRenderArrivals(initialStopIds, true);
+            }
+        } else {
+            console.warn('Cookie encontrado mas não foi possível desencriptar (pode ser formato antigo ou inválido).');
+        }
+    }
 
     /**
      * Renderiza os dados de chegadas por paragem individualmente.
@@ -392,15 +428,88 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Junta os IDs numa string (ex: "020001, 020003"), encripta e salva
+        const idValues = stopIds.join(', ');
+        const encryptedValue = encryptData(idValues);
+        
+        setCookie(COOKIE_NAME, encryptedValue, COOKIE_DAYS);
+
         await fetchAndRenderArrivals(stopIds, true);
     });
 });
 
 /**
- * Alerta simples para indicar o que é o ID?
+ * Alerta simples para indicar o que é o ID
  */
 function showID() {
-    alert('O ID de uma paragem é a sua identificação da paragem (ex: 020001). No website, está localizada na parte superior da página de x paragem, acima do nome da mesma. No terreno, está localizada na parte inferior direita dos postaletes com a lista de linhas.');
+    alert('O ID de uma paragem é a sua identificação (ex: 020001). No site da Carris Metropolitana, está localizada na parte superior da página de x paragem, acima do nome desta. No terreno, está localizada na parte inferior do semi-círculo amarelo dos postaletes. Para o caso de ainda ter dúvidas, leia o README, localizado na pasta.');
+}
+
+/**
+ * Define um cookie.
+ */
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+}
+
+/**
+ * Obtém o valor de um cookie.
+ */
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+// Chave definida no topo do ficheiro (ENCRYPTION_KEY)
+
+/**
+ * Encripta uma string usando XOR Cipher e Base64.
+ * @param {string} data - Texto plano.
+ * @returns {string} - Texto cifrado em Base64.
+ */
+function encryptData(data) {
+    const key = 'cmet_key'; // Repetir aqui ou usar a global
+    let result = '';
+    for (let i = 0; i < data.length; i++) {
+        // XOR entre o charCode do dado e o charCode da chave
+        result += String.fromCharCode(data.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+    }
+    // Converte para Base64 para ser seguro guardar no cookie
+    return btoa(result);
+}
+
+/**
+ * Desencripta uma string vinda de Base64 e XOR.
+ * @param {string} encryptedData - Texto cifrado em Base64.
+ * @returns {string|null} - Texto plano ou null se falhar.
+ */
+function decryptData(encryptedData) {
+    const key = 'cmet_key';
+    try {
+        // Converte de Base64 de volta para string cifrada
+        const stringData = atob(encryptedData);
+        let result = '';
+        for (let i = 0; i < stringData.length; i++) {
+            // XOR reverso (que é igual ao normal)
+            result += String.fromCharCode(stringData.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+        }
+        return result;
+    } catch (e) {
+        console.error('Falha ao desencriptar dados:', e);
+        return null;
+    }
 }
 
 /**
