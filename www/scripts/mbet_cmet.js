@@ -11,7 +11,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const REFRESH_INTERVAL = 10000; // Intervalo até atualizar (10 segundos)
     const COOKIE_NAME = 'cmet_search'; // Nome do cookie
     const COOKIE_DAYS = 365; // Duração do cookie (1 ano)
-    const ENCRYPTION_KEY = 'cmet_key'; // Chave para "baralhar" os dados
 
     let refreshTimer = null; 
     let lastSearchStopIds = null; 
@@ -68,13 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         results.forEach(result => {
             const stopId = result.stopId;
-            const stopName = result.stopName || `Paragem ${stopId} (Nome Desconhecido)`;
+            const stopName = result.stopName || `Paragem Inexistente`;
             const stopDiv = document.createElement('div');
             stopDiv.classList.add('stop-arrival');
             
             if (result.error) {
                 stopDiv.innerHTML = `
-                    <h3>${stopName} (${stopId}) <span class="error-label">ERRO</span></h3>
+                    <h3>${stopName}: ${stopId} <span class="error-label">ERRO</span></h3>
                     <p class="error-message">${result.error}</p>
                 `;
             } else {
@@ -102,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <th>Tempo de Espera</th>
                                     <th>Hora de Passagem</th>
                                     <th>Tipo de Horário</th>
+                                    <th>Veículo</th>
                                 </tr>
                             </thead>
                         <tbody>
@@ -113,7 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         let statusText = '';
                         let statusClass = ''; 
                         const lineNumber = arrival.line_id || '----';
-                        const destination = arrival.headsign || arrival.destination || 'Desconhecido';
+                        const destination = arrival.headsign || 'Desconhecido';
+                        const vehicleId = arrival.vehicle_id?.split('|').at(1) ?? '';
 
                         if (arrival.estimated_arrival_unix) { // Caso as chegadas sejam em tempo real
                             const secondsToArrival = Math.max(0, Math.floor((arrival.estimated_arrival_unix * 1000 - Date.now()) / 1000));
@@ -158,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <td>${waitTime}</td>
                                 <td>${arrivalTime}</td>
                                 <td>${statusText}</td>
+                                <td>${vehicleId}</td>
                             </tr>
                         `;
                     });
@@ -166,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
     
                 stopDiv.innerHTML = `
-                    <h3>${stopName} (${stopId})</h3>
+                    <h3>${stopName}: ${stopId}</h3>
                     ${arrivalsHtml}
                 `;
             }
@@ -193,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 hasError = true;
             } else {
                 const stopId = result.stopId;
-                const stopName = result.stopName || `Paragem ${stopId} (Nome Desconhecido)`;
+                const stopName = result.stopName || `Paragem Inexistente`;
                 const allArrivals = result.data || [];
                 let futureArrivals = allArrivals.filter(isFutureArrival);
                 
@@ -241,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th>Tempo de Espera</th>
                         <th>Hora de Passagem</th>
                         <th>Tipo de Horário</th>
+                        <th>Veículo</th>
                     </tr>
                 </thead>
             <tbody>
@@ -252,7 +255,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let statusText = '';
             let statusClass = ''; 
             const lineNumber = arrival.line_id || '----';
-            const destination = arrival.headsign || arrival.destination || 'Desconhecido';
+            const destination = arrival.headsign || 'Desconhecido';
+            const vehicleId = arrival.vehicle_id?.split('|').at(1) ?? '';
 
             if (arrival.estimated_arrival_unix) { // Caso as chegadas sejam em tempo real
                 const secondsToArrival = Math.max(0, Math.floor((arrival.estimated_arrival_unix * 1000 - Date.now()) / 1000));
@@ -298,6 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${waitTime}</td>
                     <td>${arrivalTime}</td>
                     <td>${statusText}</td>
+                    <td>${vehicleId}</td>
                 </tr>
             `;
         });

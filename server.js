@@ -35,7 +35,14 @@ async function loadStopNames() {
         if (response.ok) {
             const data = await response.json();
             stopNameCache = data.reduce((acc, stop) => {
-                acc[stop.id] = stop.long_name;
+
+                let stopName = stop.long_name;
+                if (stop.operational_status === 'voided') {
+                    stopName = `Paragem Desativada`;
+                }
+
+                acc[stop.id] = stopName;
+                
                 if (stop.pattern_ids && stop.pattern_ids.length > 0) {
                     stopPatternCache[stop.id] = stop.pattern_ids.map(String);
                 }
@@ -230,7 +237,7 @@ app.post('/api/arrivals', async (req, res) => {
         // Adiciona os nomes das paragens aos resultados finais
         const finalResults = results.map(result => {
             if (result.data) {
-                result.stopName = stopNameCache[result.stopId] || `Paragem ${result.stopId}`;
+                result.stopName = stopNameCache[result.stopId] || `Paragem Inexistente`;
             }
             return result;
         });
