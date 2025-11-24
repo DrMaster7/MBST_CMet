@@ -13,9 +13,7 @@ Apesar de a Carris Metropolitana já ter desenvolvido um sistema de paragens int
 ### Tecnologias Usadas (🇵🇹)
 - HTML  
 - CSS  
-- JavaScript  
-- Node.js  
-- Express
+- JavaScript (inc. Node.js and Express)
 
 ---
 
@@ -72,15 +70,11 @@ Pronto, a aplicação estará pronta a ser usada.
 
 ### Como Utilizar? (🇵🇹)
 **NOTA:** Para exemplificar, as seguintes paragens serão usadas no decorrer de toda a aplicação:
-- PRAGAL (PORTAGEM) (020003), no Pragal (Almada)
-- Praceta Miguel Cláudio 2 (030603), na Amadora
-- PEGÕES GARE (ESTAÇÃO) (100234), em Pegões-Gare (Montijo)
-- Sr Roubado (Teatro) (110113), no Senhor Roubado (Odivelas)
-- ALDEIA MECO (R PRAIA M BAIXO) CENTRO (150101), na Aldeia do Meco (Sesimbra)
+- Av Dr José Pontes Fte 5 (030461), na Reboleira (Amadora)
+- Av 25 Abril 87 (Jardim Radial) (110319), no Jardim da Radial (Odivelas)
+- CORROIOS(R CID ALMADA) FARMACIA MERCADO (140690), em Corroios (Seixal)
 - SETÚBAL (AV BENTO GONÇ)CENTRO COMERCIAL
 (160066), em Setúbal
-- R dos Ganelos 10 (171779), no Magoito (Sintra)
-- CM 1239 23 (Loja Nova) (180383), em Loja Nova (Vila Franca de Xira)
 
 ---
 
@@ -96,7 +90,7 @@ Pronto, a aplicação estará pronta a ser usada.
     
         ![alt text](www/images/id_terreno.png)
 
-        **Figura 2:** Postalete em Pegões-Gare, com identificação do ID
+        **Figura 2:** Postalete em Corroios, com identificação do ID (foto tirada a 22 de Novembro de 2025)
 
     - No site da Carris Metropolitana, ele é mais fácil de localizar. Bastará ir a https://carrismetropolitana.pt/stops, localizar a sua paragem e verificar a localização do ID (como na figura abaixo), clicando nele que o valor é copiado automaticamente.
 
@@ -111,9 +105,9 @@ Pronto, a aplicação estará pronta a ser usada.
 2. Após pesquisar as paragens, irão aparecer as paragens mais abaixo na página com este formato:
 
     ![alt text](www/images/tabela_individual.png)
-    **Figura 4:** Exemplo de três tabelas individuais, retirada das paragens **110113**, **150101** e **160066** às 06:59 de 22 de Novembro de 2025
+    **Figura 4:** Exemplo de uma tabela individual, retirada da paragem **140690** às 10:38 de 24 de Novembro de 2025
 
-    A tabela em si é fácil de entender: Mostra a paragem pesquisada, a linha que o autocarro servirá essa paragem com o seu destino, o tempo de espera que o utilizador irá ter até o autocarro chegar na hora prevista de passagem, o básico.
+    A tabela em si é fácil de entender: Mostra a paragem pesquisada, a linha que o autocarro servirá essa paragem com o seu destino, o tempo de espera que o utilizador irá ter até o autocarro chegar na hora prevista de passagem e o veículo a fazer esse horário.
 
     A única coisa não tão direta é o tipo de horário, mas será também simples de entender. Pela Carris Metropolitana utilizar o tempo real nos seus autocarros, fica mais preciso detetar quando um autocarro chega a uma paragem, podendo o utilizador se antecipar previamente se um autocarro está adiantado, a horas ou atrasado.
 
@@ -127,7 +121,7 @@ Pronto, a aplicação estará pronta a ser usada.
 
     - **Branco:** Horário em tempo calendarizado, tempo real inexistente (normalmente aplicável em terminais de linha, como em Cacilhas ou no Campo Grande).
 
-    No exemplo que vemos, as linhas 2764, 2772 e 2812 estão adiantadas relativamente ao horário calendarizado, as linhas 2750 e 2751 estão atrasados relativamente ao horário calendarizado, enquanto a linha 4412 está no tempo certo relativamente ao horário calendarizado.
+    No exemplo que vemos, a linha 3527 está adiantada relativamente ao horário calendarizado, a linha 3525 está atrasada relativamente ao horário calendarizado, enquanto a linha 3515 está no tempo certo relativamente ao horário calendarizado.
     
     Todas as restantes linhas (a branco), ou ainda não começaram os seus serviços, tem o tempo real desativado/com erro ou começam nessa paragem (neste caso, nenhuma das três paragens é ponto terminal para uma linha, excluindo a última possibilidade).
 
@@ -138,7 +132,7 @@ Pronto, a aplicação estará pronta a ser usada.
 3. Também irá reparar que após pesquisar as paragens, irá aparecer um botão ao lado com a legenda "Tabela Mestre". É aqui que o website irá permitir que você possa juntar as várias paragens pesquisadas numa única tabela, como mostrado abaixo:
 
     ![alt text](www/images/tabela_mestre.png)
-    **Figura 5:** Exemplo de uma tabela mestre, retirada das paragens mencionadas às 07:14 de 22 de Novembro de 2025
+    **Figura 5:** Exemplo de uma tabela mestre, retirada das 4 paragens mencionadas às 10:38 de 24 de Novembro de 2025
 
     O sistema deste tipo de tabela é relativamente parecido ao das tabelas individuais (apenas mudando o facto de não aparecer os nomes das paragens, mas os IDs), incluindo as limitações de mostrar apenas os próximos 10 horários que estejam nos próximos 60 minutos, o que poderá ocultar alguns horários de algumas paragens que, numa tabela individual, iriam aparecer.
 
@@ -157,9 +151,7 @@ Although Carris Metropolitana has already developed a smart stop system that all
 ### Technologies Used (🇬🇧)
 - HTML  
 - CSS  
-- JavaScript  
-- Node.js  
-- Express
+- JavaScript (inc. Node.js and Express)
 
 ---
 
@@ -216,15 +208,11 @@ That's it, the application is ready to use.
 
 ### How to use it? (🇬🇧)
 **NOTE:** For illustrative purposes, the following stops will be used throughout the application:
-- PRAGAL (PORTAGEM) (020003), in Pragal (Almada)
-- Praceta Miguel Cláudio 2 (030603), in Amadora
-- PEGÕES GARE (STATION) (100234), in Pegões-Gare (Montijo)
-- Sr Roubado (Theatre) (110113), in Senhor Roubado (Odivelas)
-- ALDEIA MECO (R PRAIA M BAIXO) CENTRO (150101), in Aldeia do Meco (Sesimbra)
+- Av Dr José Pontes Fte 5 (030461), in Reboleira (Amadora)
+- Av 25 Abril 87 (Jardim Radial) (110319), in Jardim da Radial (Odivelas)
+- CORROIOS(R CID ALMADA) FARMACIA MERCADO (140690), in Corroios (Seixal)
 - SETÚBAL (AV BENTO GONÇ)CENTRO COMERCIAL
 (160066), in Setúbal
-- R dos Ganelos 10 (171779), in Magoito (Sintra)
-- CM 1239 23 (Loja Nova) (180383), in Loja Nova (Vila Franca de Xira)
 
 ---
 
@@ -240,7 +228,7 @@ That's it, the application is ready to use.
     
         ![alt text](www/images/id_terreno.png)
 
-        **Figure 2:** Stop in Pegões-Gare, with ID identification
+        **Figure 2:** Stop in Corroios, with ID identification (photo taken at 22 November 2025)
 
     - On the Carris Metropolitana website, it is easier to find. Simply go to https://carrismetropolitana.pt/stops, locate your stop and check the location of the ID (as in the figure below), clicking on it to automatically copy the value.
 
@@ -255,9 +243,9 @@ That's it, the application is ready to use.
 2. After searching for stops, the stops will appear further down the page in this format:
 
     ![alt text](www/images/tabela_individual.png)
-    **Figure 4:** Example of three individual tables, taken from stops **110113**, **150101** and **160066** at 06:59 on 22 November 2025
+    **Figure 4:** Example of three individual tables, taken from stops **140690** at 10:38 on 24 November 2025
 
-    The table itself is easy to understand: it shows the stop searched, the line that the bus will serve that stop with its destination, the waiting time that the user will have until the bus arrives at the scheduled time, the basics.
+    The table itself is easy to understand: it shows the stop searched, the line that the bus will serve that stop with its destination, the waiting time that the user will have until the bus arrives at the scheduled time and the vehicle doing that schedule.
 
     The only thing that is not so straightforward is the type of timetable, but it is also simple to understand. Because Carris Metropolitana uses real time on its buses, it is more accurate to detect when a bus arrives at a stop, allowing the user to anticipate in advance if a bus is early, on time or late.
 
@@ -271,7 +259,7 @@ That's it, the application is ready to use.
 
     - **White:** Scheduled timetable, no real-time data available (usually applicable at terminal stops, such as Cacilhas or Campo Grande).
 
-    In the example we see, lines 2764, 2772 and 2812 are ahead of schedule, lines 2750 and 2751 are behind schedule, while line 4412 is on time.
+    In the example we see, line 3527 is ahead of schedule, line 3525 is behind schedule, while line 3515 is on time.
 
     All other lines (in white) have either not yet started their services, have real time disabled/with an error, or start at that stop (in this case, none of the three stops are the terminal point for a line, excluding the last possibility).
 
@@ -282,8 +270,6 @@ That's it, the application is ready to use.
 3. You will also notice that after searching for stops, a button will appear next to them with the label ‘Master Table’. This is where the website will allow you to combine the various stops searched into a single table, as shown below:
 
     ![alt text](www/images/tabela_mestre.png)
-    **Figure 5:** Example of a master table, taken from the stops mentioned at 07:14 on 22 November 2025
+    **Figure 5:** Example of a master table, taken from the 4 stops mentioned at 10:38 on 24 November 2025
 
     The system for this type of table is relatively similar to that of individual tables (the only difference being that the names of the stops do not appear, but rather their IDs), including the limitation of only showing the next 10 timetables that are within the next 60 minutes, which may hide some timetables for some stops that would appear in an individual table.
-
----
