@@ -2,6 +2,7 @@
 require('dotenv').config();
 
 const express = require('express');
+const helmet = require('helmet');
 const fetch = require('node-fetch');
 const path = require('path');
 const app = express();
@@ -16,6 +17,8 @@ const PORT = process.env.PORT || 8081;
 // Middleware para servir ficheiros estáticos da pasta 'www'
 app.use(express.static(path.join(__dirname, 'www')));
 app.use(express.json());
+// Middleware para o website utilizador o HSTS (HTTP Strict Transport Security) por 90 dias, incluíndo os subdomínios (e sem preload).
+app.use(helmet.hsts({maxAge: 90 * 24 * 60 * 60, force: true, includeSubDomains: true}));
 
 let stopNameCache = {}; // Caching para os nomes das paragens { "stopId": "Nome da Paragem" }
 let patternStopFinalCache = {}; // Caching para o ID da última paragem de um pattern { "patternId": "stopIdFinal" }

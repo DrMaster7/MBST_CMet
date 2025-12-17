@@ -7,17 +7,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const buttonText = document.getElementById('button-text');
     const loadingSpinner = document.getElementById('loading-spinner');
     const toggleViewButton = document.getElementById('toggle-view-button');
+    const detailsButton = document.getElementById('details-button');
+    const mainElement = document.querySelector('main');
 
     const REFRESH_INTERVAL = 10000; // Intervalo até atualizar (10 segundos)
     const COOKIE_NAME = 'cmet_search'; // Nome do cookie
     const COOKIE_DAYS = 365; // Duração do cookie (1 ano)
 
-    let refreshTimer = null; 
-    let lastSearchStopIds = null; 
-    let lastSuccessfulData = null; 
+    let refreshTimer = null;
+    let lastSearchStopIds = null;
+    let lastSuccessfulData = null;
 
     let currentViewMode = 'individual'; 
     toggleViewButton.textContent = 'Ver Tabela Mestre';
+
+    let showDetails = false;
+    detailsButton.textContent = 'Mostrar Detalhes';
 
     /**
      * Lê o cookie encriptado e tenta desencriptar o mesmo. Se for válido, executa e renova.
@@ -58,7 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function renderIndividualResults(results, container) {
         container.innerHTML = ''; 
-        toggleViewButton.style.display = (results.length > 0 && results.some(r => r.data && r.data.length > 0)) ? 'inline-block' : 'none'; 
+        toggleViewButton.style.display = (results.length > 0 && results.some(r => r.data && r.data.length > 0)) ? 'inline-block' : 'none';
+        detailsButton.style.display = (results.length > 0 && results.some(r => r.data && r.data.length > 0)) ? 'inline-block' : 'none';
 
         if (results.length === 0) {
             container.innerHTML = '<p>Nenhuma paragem consultada.</p>';
@@ -100,8 +106,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <th>Destino</th>
                                     <th>Tempo de Espera</th>
                                     <th>Hora de Passagem</th>
-                                    <th>Tipo de Horário</th>
-                                    <th>Veículo</th>
+                                    <th class="col-details">Tipo de Horário</th>
+                                    <th class="col-details">Veículo</th>
                                 </tr>
                             </thead>
                         <tbody>
@@ -158,8 +164,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <td>${destination}</td>
                                 <td>${waitTime}</td>
                                 <td>${arrivalTime}</td>
-                                <td>${statusText}</td>
-                                <td>${vehicleId}</td>
+                                <td class="col-details">${statusText}</td>
+                                <td class="col-details">${vehicleId}</td>
                             </tr>
                         `;
                     });
@@ -185,7 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderMasterTable(results, container) {
         container.innerHTML = ''; 
 
-        toggleViewButton.style.display = (results.length > 0 && results.some(r => r.data && r.data.length > 0)) ? 'inline-block' : 'none'; 
+        toggleViewButton.style.display = (results.length > 0 && results.some(r => r.data && r.data.length > 0)) ? 'inline-block' : 'none';
+        detailsButton.style.display = (results.length > 0 && results.some(r => r.data && r.data.length > 0)) ? 'inline-block' : 'none';
 
         let allFutureArrivals = [];
         let hasError = false;
@@ -242,8 +249,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th>Paragem</th>
                         <th>Tempo de Espera</th>
                         <th>Hora de Passagem</th>
-                        <th>Tipo de Horário</th>
-                        <th>Veículo</th>
+                        <th class="col-details">Tipo de Horário</th>
+                        <th class="col-details">Veículo</th>
                     </tr>
                 </thead>
             <tbody>
@@ -301,8 +308,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${arrival.originStopId}</td>
                     <td>${waitTime}</td>
                     <td>${arrivalTime}</td>
-                    <td>${statusText}</td>
-                    <td>${vehicleId}</td>
+                    <td class="col-details">${statusText}</td>
+                    <td class="col-details">${vehicleId}</td>
                 </tr>
             `;
         });
@@ -329,6 +336,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (isManualSearch) {
             searchButton.disabled = true;
+            toggleViewButton.disabled = true;
+            detailsButton.disabled = true;
             buttonText.style.display = 'none';
             loadingSpinner.style.display = 'inline';
             resultsContainer.innerHTML = '<p>A carregar dados...</p>';
@@ -381,6 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             if (isManualSearch) {
                 searchButton.disabled = false;
+                toggleViewButton.disabled = false;
+                detailsButton.disabled = false;
                 buttonText.style.display = 'inline';
                 loadingSpinner.style.display = 'none';
             }
@@ -409,8 +420,21 @@ document.addEventListener('DOMContentLoaded', () => {
             renderIndividualResults(lastSuccessfulData, resultsContainer);
         }
     }
+
+    function toggleDetails() {
+        showDetails = !showDetails;
+
+        if (showDetails) {
+            mainElement.classList.remove('hide-details');
+            detailsButton.textContent = 'Esconder Detalhes';
+        } else {
+            mainElement.classList.add('hide-details');
+            detailsButton.textContent = 'Mostrar Detalhes';
+        }
+    }
     
     toggleViewButton.addEventListener('click', toggleViewMode);
+    detailsButton.addEventListener('click', toggleDetails);
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -447,7 +471,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * Alerta simples para indicar o que é o ID
  */
 function showID() {
-    alert('O ID de uma paragem é a sua identificação (ex: 020001). No site da Carris Metropolitana, está localizada na parte superior da página de x paragem, acima do nome desta. No terreno, está localizada na parte inferior do semi-círculo amarelo dos postaletes. Para o caso de ainda ter dúvidas, leia o README, localizado na pasta.');
+    alert('ID é a identidade de uma paragem (ex: 020001). No site da Carris Metropolitana, está localizada na parte superior da página da paragem, acima do nome. No terreno, está localizada na parte inferior do semi-círculo amarelo dos postaletes. Para mais informações consulte o README, localizado na pasta e no GitHub da aplicação.');
 }
 
 /**

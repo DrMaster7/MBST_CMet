@@ -86,7 +86,7 @@ Pronto, a aplicação estará pronta a ser usada.
 
     No menu irá deparar-se com uma caixa de texto, onde o utilizador irá introduzir os IDs das paragens que desejar. De notar que, quantas mais paragens serem pedidas, mais tempo o pedido poderá retornar resultados. Como já referido, os IDs das paragens serão os valores bases para utilizar no website. Caso o utilizador esteja em dúvida o que seria o ID de uma paragem:
     
-    - No terreno estão localizados no canto inferior do semi-círculo amarelo dos postaletes, com uma nomenclatura normalmente de "COD. (ID da paragem)". **ESSE É O VALOR QUE O UTILIZADOR PRECISA PARA UTILIZAR O WEBSITE.**
+    - No terreno estão localizados no canto inferior do semi-círculo amarelo dos postaletes, com uma nomenclatura normalmente de "COD. (ID da paragem)". **Esse é o valor que o utilizador precisa para o website**, como já explicado.
     
         ![alt text](www/images/id_terreno.png)
 
@@ -105,7 +105,10 @@ Pronto, a aplicação estará pronta a ser usada.
 2. Após pesquisar as paragens, irão aparecer as paragens mais abaixo na página com este formato:
 
     ![alt text](www/images/tabela_individual.png)
-    **Figura 4:** Exemplo de uma tabela individual, retirada da paragem **140690** às 10:38 de 24 de Novembro de 2025
+    **Figura 4.1:** Exemplo de uma tabela individual
+
+    ![alt text](www/images/tabela_individual_detalhes.png)
+    **Figura 4.2:** Exemplo de uma tabela individual com os detalhes adicionais
 
     A tabela em si é fácil de entender: Mostra a paragem pesquisada, a linha que o autocarro servirá essa paragem com o seu destino, o tempo de espera que o utilizador irá ter até o autocarro chegar na hora prevista de passagem e o veículo a fazer esse horário.
 
@@ -121,20 +124,25 @@ Pronto, a aplicação estará pronta a ser usada.
 
     - **Branco:** Horário em tempo calendarizado, tempo real inexistente (normalmente aplicável em terminais de linha, como em Cacilhas ou no Campo Grande).
 
-    No exemplo que vemos, a linha 3527 está adiantada relativamente ao horário calendarizado, a linha 3525 está atrasada relativamente ao horário calendarizado, enquanto a linha 3515 está no tempo certo relativamente ao horário calendarizado.
+    No exemplo que vemos, a linha 4426 está adiantada relativamente ao horário calendarizado, a linha 4412 está atrasada relativamente ao horário calendarizado, enquanto as linhas 4406 e 4437 estão no tempo certo relativamente ao horário calendarizado.
     
     Todas as restantes linhas (a branco), ou ainda não começaram os seus serviços, tem o tempo real desativado/com erro ou começam nessa paragem (neste caso, nenhuma das três paragens é ponto terminal para uma linha, excluindo a última possibilidade).
 
-    De notar que as tabelas irão apenas mostrar os próximos 10 horários que estejam nos próximos 60 minutos. Caso nenhum resultado seja detetado, irá retornar o resultado da paragem **150101**.
+    De notar que as tabelas irão apenas mostrar os próximos 10 horários que estejam nos próximos 60 minutos. Caso nenhum resultado seja detetado, não irá retornar horários.
+
+    Outra opção importante é o botão "Mostrar/Esconder Detalhes". Ela permite que o utilizador mostre/oculte alguns detalhes (tipo de horário e veículo). Esta inclusão é principalmente feita para os telemóveis, de forma a que a aplicação funcione sem que o utilizador tenha de deslocar-se horizontalmente no telemóvel para ver a aplicação, e também para aqueles utilizadores que queiram uma utilização mais simples e apenas saber os próximos horários a chegar.
 
 ---
 
 3. Também irá reparar que após pesquisar as paragens, irá aparecer um botão ao lado com a legenda "Tabela Mestre". É aqui que o website irá permitir que você possa juntar as várias paragens pesquisadas numa única tabela, como mostrado abaixo:
 
     ![alt text](www/images/tabela_mestre.png)
-    **Figura 5:** Exemplo de uma tabela mestre, retirada das 4 paragens mencionadas às 10:38 de 24 de Novembro de 2025
+    **Figura 5.1:** Exemplo de uma tabela mestre
 
-    O sistema deste tipo de tabela é relativamente parecido ao das tabelas individuais (apenas mudando o facto de não aparecer os nomes das paragens, mas os IDs), incluindo as limitações de mostrar apenas os próximos 10 horários que estejam nos próximos 60 minutos, o que poderá ocultar alguns horários de algumas paragens que, numa tabela individual, iriam aparecer.
+    ![alt text](www/images/tabela_mestre_detalhes.png)
+    **Figura 5.2:** Exemplo de uma tabela mestre com detalhes
+
+    O sistema deste tipo de tabela é igual ao das tabelas individuais, excetuando o facto dos nomes não serem incluídos e a coluna "paragem", que apenas indica o ID da paragem a que esse horário está associado.
 
 ---
 
@@ -224,7 +232,7 @@ That's it, the application is ready to use.
 
     In the menu, you will see a text box where you can enter the IDs of the stops you want. Please note that the more stops you request, the longer it will take for the request to return results. As mentioned above, the stop IDs will be the base values to use on the website. If you are unsure what a stop ID is:
     
-    - On the ground, they are located in the lower corner of the yellow semi-circle on the bus stops, usually labelled ‘COD. (Stop ID)’. **THIS IS THE VALUE YOU NEED TO USE THE WEBSITE.**
+    - On the ground, they are located at the bottom corner of the yellow semi-circle of the bus stops, usually labelled "COD. (Stop ID)". **This is the value that the user needs for the website**, as already explained.
     
         ![alt text](www/images/id_terreno.png)
 
@@ -243,7 +251,10 @@ That's it, the application is ready to use.
 2. After searching for stops, the stops will appear further down the page in this format:
 
     ![alt text](www/images/tabela_individual.png)
-    **Figure 4:** Example of three individual tables, taken from stops **140690** at 10:38 on 24 November 2025
+    **Figure 4.1:** Example of an individual table
+
+    ![alt text](www/images/tabela_individual_detalhes.png)
+    **Figure 4.2:** Example of an individual table with the additional details
 
     The table itself is easy to understand: it shows the stop searched, the line that the bus will serve that stop with its destination, the waiting time that the user will have until the bus arrives at the scheduled time and the vehicle doing that schedule.
 
@@ -259,17 +270,23 @@ That's it, the application is ready to use.
 
     - **White:** Scheduled timetable, no real-time data available (usually applicable at terminal stops, such as Cacilhas or Campo Grande).
 
-    In the example we see, line 3527 is ahead of schedule, line 3525 is behind schedule, while line 3515 is on time.
+    In the example we see, line 4426 is ahead of schedule, line 4412 is behind schedule, while lines 4406 and 4437 are on time.
 
     All other lines (in white) have either not yet started their services, have real time disabled/with an error, or start at that stop (in this case, none of the three stops are the terminal point for a line, excluding the last possibility).
 
-    Please note that the tables will only show the next 10 schedules that are within the next 60 minutes. If no results are found, the result for stop **150101** will be returned.
+    Please note that the tables will only show the next 10 schedules that are within the next 60 minutes. If no results are found, no schedules will be returned.
+
+    Another important option is the "Show/Hide Details" button. It allows the user to show/hide certain details (such as timetable and vehicle type). This feature is mainly intended for mobile phones, so that the application works without the user having to scroll horizontally on their phone to view the application, and also for those users who want a simpler experience and just want to know the next arrival times.
+
 
 ---
 
-3. You will also notice that after searching for stops, a button will appear next to them with the label ‘Master Table’. This is where the website will allow you to combine the various stops searched into a single table, as shown below:
+3. You will also notice that after searching for stops, a button will appear next to them with the label "Master Table". This is where the website will allow you to combine the various stops searched into a single table, as shown below:
 
     ![alt text](www/images/tabela_mestre.png)
-    **Figure 5:** Example of a master table, taken from the 4 stops mentioned at 10:38 on 24 November 2025
+    **Figure 5.1:** Example of a master table
 
-    The system for this type of table is relatively similar to that of individual tables (the only difference being that the names of the stops do not appear, but rather their IDs), including the limitation of only showing the next 10 timetables that are within the next 60 minutes, which may hide some timetables for some stops that would appear in an individual table.
+    ![alt text](www/images/tabela_mestre_detalhes.png)
+    **Figure 5.2:** Example of a master table with details
+
+    The system for this type of table is the same as for individual tables, except that names are not included and the ‘stop’ column only indicates the ID of the stop to which that timetable is associated.

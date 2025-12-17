@@ -14,6 +14,11 @@ header {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+header h1 {
+    font-size: clamp(1.8rem, 5vw, 2.5rem);
+    margin: 0;
+}
+
 main {
     max-width: 1000px;
     margin: 20px auto;
@@ -42,15 +47,15 @@ a {
     margin-bottom: 15px;
     border: 1px solid #ccc;
     border-radius: 4px;
-    box-sizing: border-box; 
+    box-sizing: border-box;
     font-size: 16px;
     resize: vertical;
 }
 
 /* Botões (Search e Toggle View) */
-#search-button, #toggle-view-button {
-    font-family: 'Lexend', sans-serif; 
-    background-color: #ffdd00; 
+#search-button, #toggle-view-button, #details-button {
+    font-family: 'Lexend', sans-serif;
+    background-color: #ffdd00;
     color: #000;
     padding: 12px 20px;
     border: none;
@@ -59,15 +64,15 @@ a {
     font-size: 17px;
     font-weight: bold;
     transition: background-color 0.3s;
-    margin-right: 10px; 
+    margin-right: 10px;
 }
 
-#search-button:hover:not(:disabled), #toggle-view-button:hover:not(:disabled) {
+#search-button:hover:not(:disabled), #toggle-view-button:hover:not(:disabled), #details-button:hover:not(:disabled) {
     background-color: #b49c00;
     color: #fff;
 }
 
-#search-button:disabled, #toggle-view-button:disabled {
+#search-button:disabled, #toggle-view-button:disabled, #details-button:disabled {
     background-color: #000;
     cursor: not-allowed;
 }
@@ -138,14 +143,14 @@ a {
 }
 
 .master-arrivals-table th, .master-arrivals-table td {
-    padding: 10px 15px; 
+    padding: 10px 15px;
     text-align: left;
-    border-bottom: 1px solid #555; 
+    border-bottom: 1px solid #555;
 }
 
 .master-arrivals-table thead th {
-    background-color: #222; 
-    color: #ffdd00; 
+    background-color: #222;
+    color: #ffdd00;
     font-weight: bold;
     text-transform: uppercase;
     font-size: 0.9em;
@@ -180,14 +185,81 @@ a {
     font-style: italic;
 }
 
+.col-details {
+    display: table-cell !important;
+}
+
+.hide-details .col-details {
+    display: none !important;
+}
+
+.hide-details .master-arrivals-table th:nth-child(6),
+.hide-details .master-arrivals-table th:nth-child(7),
+.hide-details .individual-table th:nth-child(5),
+.hide-details .individual-table th:nth-child(6) {
+    display: none !important;
+}
+
+.master-arrivals-table td:nth-child(6),
+.master-arrivals-table td:nth-child(7),
+.individual-table td:nth-child(5),
+.individual-table td:nth-child(6) {
+    display: table-cell;
+}
+
 /* Responsividade */
-@media (max-width: 768px) {
-    .master-arrivals-table {
-        font-size: 0.8em;
+@media (max-width: 600px) {
+    main {
+        margin: 10px auto;
+        padding: 0 10px;
     }
-    .master-arrivals-table th, 
-    .master-arrivals-table td {
-        padding: 8px 10px;
+
+    .input-section {
+        padding: 15px;
+    }
+
+    #search-button, #toggle-view-button, #details-button {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 15px;
+        padding: 10px;
+        font-size: 16px;
+    }
+    
+    #stops-form textarea {
+        font-size: 14px;
+    }
+
+    .master-arrivals-table, .individual-table {
+        font-size: 0.85em;
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+    }
+
+    footer {
+        font-size: 0.8em;
+        padding: 10px;
+    }
+}
+
+/* Tablets (Ecrãs médios, 601px a 1024px) */
+@media (min-width: 601px) and (max-width: 1024px) {
+    main {
+        padding: 0 15px;
+    }
+
+    #search-button, #toggle-view-button, #details-button {
+        margin-bottom: 15px;
+    }
+
+    .master-arrivals-table, .master-arrivals-table th, .master-arrivals-table td {
+        padding: 8px 12px;
+        font-size: 0.9em;
+    }
+
+    .hide-details .col-details {
+        display: none !important;
     }
 }
 
@@ -196,7 +268,7 @@ footer {
     text-align: center;
     padding: 15px;
     margin-top: 30px;
-    border-top: 1px solid #6c757d; 
+    border-top: 1px solid #6c757d;
     color: #6c757d;
     font-size: 0.9em;
 }

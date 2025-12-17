@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBST | Carris Metropolitana (App Não-Oficial)</title>
     <link href='https://fonts.googleapis.com/css?family=Lexend' rel='stylesheet'>
     <link rel="stylesheet" href="styles/mbet_cmet.css">
@@ -12,11 +11,10 @@
         <h1>⏰ Multiple Bus Stop Tracker (Carris Metropolitana - App Não-Oficial) ⏰</h1>
     </header>
     
-    <main>
+    <main class="hide-details">
         <section class="input-section">
-            <h2>Escolha as Paragens</h2>
-            <p>Introduza os IDs das paragens (separados por vírgulas).</p>
-            <a onclick="showID()">ID?</a>
+            <h2>Escolha as suas paragens</h2>
+            <p>Introduza os <a onclick="showID()" style="color:#FFDD00">IDs</a> das paragens (separadas por vírgulas) para visualizar os horários das paragens.</p>
 
             <form id="stops-form">
                 <textarea id="stop-ids" rows="3" placeholder="IDs das paragens (separados por vírgula)"></textarea>
@@ -24,7 +22,8 @@
                     <span id="button-text">Consultar Tempos</span>
                     <span id="loading-spinner" style="display:none;">A carregar...</span>
                 </button>
-                <button id="toggle-view-button" style="display:none; margin-bottom: 15px;">Ver Tabela Mestre</button>
+                <button id="toggle-view-button" style="display:none;">Ver Tabela Mestre</button>
+                <button id="details-button" style="display:none;">Mostrar Detalhes</button>
             </form>
         </section>
 
