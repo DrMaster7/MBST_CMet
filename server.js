@@ -296,6 +296,11 @@ app.post('/api/arrivals', async (req, res) => {
     }
 });
 
+// Indicação da rota manual para o ficheiro html.
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'www', 'mbst_cmet.html'));
+});
+
 // Início do servidor
 app.listen(PORT, () => {
     console.log(`Servidor a correr na porta ${PORT}. Para iniciar, visite http://localhost:${PORT}`);
