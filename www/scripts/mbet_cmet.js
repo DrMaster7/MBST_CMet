@@ -1,3 +1,6 @@
+// Programação do lado do cliente (frontend), incluindo a automatização e tratamento dos dados recebidos do server.js.
+// Client-side programming (frontend), including automating and processing data received from server.js.
+
 document.addEventListener('DOMContentLoaded', () => {
     // VARIÁVEIS DE ESCOPO LOCAL
     const form = document.getElementById('stops-form');
@@ -79,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (result.error) {
                 stopDiv.innerHTML = `
-                    <h3>${stopName}: ${stopId} <span class="error-label">ERRO</span></h3>
+                    <h3>${stopId} | ${stopName}<span class="error-label">ERRO</span></h3>
                     <p class="error-message">${result.error}</p>
                 `;
             } else {
@@ -88,9 +91,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Filtração e ordenação de todas as chegadas futuras (em tempo real ou calendarizado)
                 let futureArrivals = allArrivals.filter(isFutureArrival);
                 futureArrivals.sort(compareArrivals);
+
+                
+                // Filtração de registos "duplicados" (onde o ID do autocarro e o número da linha forem iguais, indicando ser o mesmo autocarro em locais diferentes)
+                const seenVehicles = new Set();
+                const uniqueArrivals = [];
+
+                for (const arrival of  futureArrivals) {
+                    // Criação de duas chaves de filtro. Se line_id e vehicle_id ou headsign forem iguais entre si, passa a uma das chaves.
+                    const vehicleKey1 = arrival.line_id && arrival.vehicle_id ? `v-l:${arrival.line_id}-${arrival.vehicle_id}` : null;
+                    const vehicleKey2 = arrival.line_id && arrival.headsign ? `l-h${arrival.line_id}-${arrival.headsign}` : null;
+
+                    // Verifica se alguma das chaves já existe no Set.
+                    const isDuplicate = (vehicleKey1 && seenVehicles.has(vehicleKey1)) || (vehicleKey2 && seenVehicles.has(vehicleKey2));
+
+                    if (!isDuplicate) { // Se não for duplicado, adiciona as chaves ao Set para bloquear os próximos
+                        if (vehicleKey1) seenVehicles.add(vehicleKey1);
+                        if (vehicleKey2) seenVehicles.add(vehicleKey2);
+                        uniqueArrivals.push(arrival);
+                    }
+                }
         
                 // Limita o número de resultados às próximas 10 chegadas
-                const arrivals = futureArrivals.slice(0, 10);
+                const arrivals = uniqueArrivals.slice(0, 10);
                 
                 let arrivalsHtml = '';
                 
@@ -106,8 +129,10 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <th>Destino</th>
                                     <th>Tempo de Espera</th>
                                     <th>Hora de Passagem</th>
-                                    <th class="col-details">Tipo de Horário</th>
                                     <th class="col-details">Veículo</th>
+                                    <th class="col-details">Modelo</th>
+                                    <th class="col-details">Capacidade</th>
+                                    <th class="col-details">Tipo de Horário</th>
                                 </tr>
                             </thead>
                         <tbody>
@@ -116,26 +141,37 @@ document.addEventListener('DOMContentLoaded', () => {
                     arrivals.forEach(arrival => {
                         let waitTime;
                         let arrivalTime;
+                        let secondsLeft;
                         let statusText = '';
                         let statusClass = ''; 
                         const lineNumber = arrival.line_id || '----';
-                        const destination = arrival.headsign || 'Desconhecido';
-                        const vehicleId = arrival.vehicle_id?.split('|').at(1) ?? '';
+                        const destination = arrival.headsign || '-';
+                        const vehicleId = arrival.vehicle_id?.split('|').at(1) ?? '-';
+                        const vehicleModel = arrival.vehicleDetails ? arrival.vehicleDetails.make.concat(' ',arrival.vehicleDetails.model) : '-';
+                        const vehicleCapacity = arrival.vehicleDetails ? arrival.vehicleDetails.capacity_total : '-';
 
                         if (arrival.estimated_arrival_unix) { // Caso as chegadas sejam em tempo real
                             const secondsToArrival = Math.max(0, Math.floor((arrival.estimated_arrival_unix * 1000 - Date.now()) / 1000));
+                            secondsLeft = Math.max(0, Math.floor((arrival.estimated_arrival_unix * 1000 - Date.now()) / 1000));
                             waitTime = formatWaitTime(secondsToArrival);
                             arrivalTime = formatArrivalTime(arrival.estimated_arrival);
                             
                             let isDelayed = false;
+                            let isSemiDelayed = false;
+                            let isSemiAhead = false;
                             let isAhead = false;
                             if (arrival.scheduled_arrival) {
                                 const scheduledDate = parseScheduledTime(arrival.scheduled_arrival, true);
                                 const estimatedDateTimestamp = arrival.estimated_arrival_unix * 1000;
-                                if (estimatedDateTimestamp > scheduledDate + 60000) { 
+                                const diff = (estimatedDateTimestamp - scheduledDate) / 60000;
+                                if (diff > 5) {  // Se estiver mais de 5 minutos atrasados.
                                     isDelayed = true;
-                                } else if (estimatedDateTimestamp < scheduledDate - 60000) { 
+                                } else if (diff < -5) {  // Se estiver mais de 5 minutos adiantado.
                                     isAhead = true;
+                                } else if (diff >= -5 && diff < -1) { // Se estiver adiantado 1 a 5 minutos.
+                                    isSemiAhead = true;
+                                } else if (diff > 1 && diff <= 5) { // Se estiver atrasado 1 a 5 minutos.
+                                    isSemiDelayed = true;
                                 }
                             }
                             if (isDelayed) {
@@ -144,6 +180,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             } else if (isAhead) {
                                 statusText = 'Real (Adiantado)';
                                 statusClass = 'status-ahead';
+                            } else if (isSemiAhead) {
+                                statusText = 'Real (Ligeiramente Adiantado)';
+                                statusClass = 'status-semi-ahead';
+                            } else if (isSemiDelayed) {
+                                statusText = 'Real (Ligeiramente Atrasado)';
+                                statusClass = 'status-semi-delayed';
                             } else {
                                 statusText = 'Real';
                                 statusClass = 'status-realtime';
@@ -151,21 +193,26 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else { // Caso as chegadas sejam calendarizadas (não sejam em tempo real)
                             const scheduledTimestamp = parseScheduledTime(arrival.scheduled_arrival, true);
                             const secondsToArrival = Math.max(0, Math.floor((scheduledTimestamp - Date.now()) / 1000));
-                            
+
+                            secondsLeft = Math.max(0, Math.floor((scheduledTimestamp - Date.now()) / 1000));
                             waitTime = formatWaitTime(secondsToArrival);
                             arrivalTime = formatArrivalTime(arrival.scheduled_arrival);
                             statusText = 'Calendarizado';
                             statusClass = 'status-scheduled';
                         }
-        
+
+                        const arrivingClass = (secondsLeft <= 120) ? 'is-arriving' : '';
+            
                         arrivalsHtml += `
-                            <tr class="${statusClass}">
+                            <tr class="${statusClass} ${arrivingClass}">
                                 <td>${lineNumber}</td>
                                 <td>${destination}</td>
                                 <td>${waitTime}</td>
                                 <td>${arrivalTime}</td>
-                                <td class="col-details">${statusText}</td>
                                 <td class="col-details">${vehicleId}</td>
+                                <td class="col-details">${vehicleModel}</td>
+                                <td class="col-details">${vehicleCapacity}</td>
+                                <td class="col-details">${statusText}</td>
                             </tr>
                         `;
                     });
@@ -174,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
     
                 stopDiv.innerHTML = `
-                    <h3>${stopName}: ${stopId}</h3>
+                    <h3>${stopId} | ${stopName}</h3>
                     ${arrivalsHtml}
                 `;
             }
@@ -235,9 +282,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Filtração e ordenação de todos os resultados de forma cronológica
         allFutureArrivals.sort(compareArrivals);
-        
+
+        // Filtração de registos "duplicados" (onde o ID do autocarro e o número da linha forem iguais, indicando ser o mesmo autocarro em locais diferentes)
+        const seenVehicles = new Set();
+        const uniqueArrivals = [];
+
+        for (const arrival of allFutureArrivals) {
+            // Criação de três chaves de filtro. Se vehicle_id, line_id ou headsign forem iguais entre si, passa a uma das chaves.
+            const vehicleKey1 = arrival.line_id && arrival.vehicle_id ? `v-l:${arrival.line_id}-${arrival.vehicle_id}` : null;
+            const vehicleKey2 = arrival.line_id && arrival.headsign ? `l-h${arrival.line_id}-${arrival.headsign}` : null;
+
+            // Verifica se alguma das chaves já existe no Set.
+            const isDuplicate = (vehicleKey1 && seenVehicles.has(vehicleKey1)) || (vehicleKey2 && seenVehicles.has(vehicleKey2));
+
+            if (!isDuplicate) { // Se não for duplicado, adiciona as chaves ao Set para bloquear os próximos
+                if (vehicleKey1) seenVehicles.add(vehicleKey1);
+                if (vehicleKey2) seenVehicles.add(vehicleKey2);
+                uniqueArrivals.push(arrival);
+            }
+        }
+
         // Limita o número de resultados às próximas 10 chegadas
-        const arrivalsToShow = allFutureArrivals.slice(0, 10);
+        const arrivalsToShow = uniqueArrivals.slice(0, 10);
 
         // Estrutura da tabela
         let tableHtml = `
@@ -249,8 +315,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <th>Paragem</th>
                         <th>Tempo de Espera</th>
                         <th>Hora de Passagem</th>
-                        <th class="col-details">Tipo de Horário</th>
                         <th class="col-details">Veículo</th>
+                        <th class="col-details">Modelo</th>
+                        <th class="col-details">Capacidade</th>
+                        <th class="col-details">Tipo de Horário</th>
                     </tr>
                 </thead>
             <tbody>
@@ -258,27 +326,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
         arrivalsToShow.forEach(arrival => {
             let waitTime;
+            let secondsLeft = 0;
             let arrivalTime;
             let statusText = '';
             let statusClass = ''; 
             const lineNumber = arrival.line_id || '----';
-            const destination = arrival.headsign || 'Desconhecido';
-            const vehicleId = arrival.vehicle_id?.split('|').at(1) ?? '';
+            const destination = arrival.headsign || '-';
+            const vehicleId = arrival.vehicle_id?.split('|').at(1) ?? '-';
+            const vehicleModel = arrival.vehicleDetails ? arrival.vehicleDetails.make.concat(' ',arrival.vehicleDetails.model) : '-';
+            const vehicleCapacity = arrival.vehicleDetails ? arrival.vehicleDetails.capacity_total : '-';
 
             if (arrival.estimated_arrival_unix) { // Caso as chegadas sejam em tempo real
                 const secondsToArrival = Math.max(0, Math.floor((arrival.estimated_arrival_unix * 1000 - Date.now()) / 1000));
                 waitTime = formatWaitTime(secondsToArrival);
                 arrivalTime = formatArrivalTime(arrival.estimated_arrival);
+                secondsLeft = Math.max(0, Math.floor((arrival.estimated_arrival_unix * 1000 - Date.now()) / 1000));
                 
                 let isDelayed = false;
+                let isSemiDelayed = false;
+                let isSemiAhead = false;
                 let isAhead = false;
                 if (arrival.scheduled_arrival) {
                     const scheduledDate = parseScheduledTime(arrival.scheduled_arrival, true);
                     const estimatedDateTimestamp = arrival.estimated_arrival_unix * 1000;
-                    if (estimatedDateTimestamp > scheduledDate + 60000) { 
+                    const diff = (estimatedDateTimestamp - scheduledDate) / 60000;
+                    if (diff > 5) {  // Se estiver mais de 5 minutos atrasados.
                         isDelayed = true;
-                    } else if (estimatedDateTimestamp < scheduledDate - 60000) { 
+                    } else if (diff < -5) {  // Se estiver mais de 5 minutos adiantado.
                         isAhead = true;
+                    } else if (diff >= -5 && diff < -1) { // Se estiver adiantado 1 a 5 minutos.
+                        isSemiAhead = true;
+                    } else if (diff > 1 && diff <= 5) { // Se estiver atrasado 1 a 5 minutos.
+                        isSemiDelayed = true;
                     }
                 }
                 if (isDelayed) {
@@ -287,29 +366,40 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else if (isAhead) {
                     statusText = 'Real (Adiantado)';
                     statusClass = 'status-ahead';
-                } else {
+                } else if (isSemiAhead) {
+                    statusText = 'Real (Ligeiramente Adiantado)';
+                    statusClass = 'status-semi-ahead';
+                } else if (isSemiDelayed) {
+                    statusText = 'Real (Ligeiramente Atrasado)';
+                    statusClass = 'status-semi-delayed';
+                }  else {
                     statusText = 'Real';
                     statusClass = 'status-realtime';
                 }
-            } else { // Caso as chegadas sejam calendarizadas (não sejam em tempo real)
+            } else { // Caso as chegadas sejam calendarizadas
                 const scheduledTimestamp = parseScheduledTime(arrival.scheduled_arrival, true);
                 const secondsToArrival = Math.max(0, Math.floor((scheduledTimestamp - Date.now()) / 1000));
-                
+
+                secondsLeft = Math.max(0, Math.floor((scheduledTimestamp - Date.now()) / 1000));
                 waitTime = formatWaitTime(secondsToArrival);
                 arrivalTime = formatArrivalTime(arrival.scheduled_arrival);
                 statusText = 'Calendarizado';
                 statusClass = 'status-scheduled';
             }
+
+            const arrivingClass = (secondsLeft <= 120) ? 'is-arriving' : '';
             
             tableHtml += `
-                <tr class="${statusClass}">
+                <tr class="${statusClass} ${arrivingClass}">
                     <td>${lineNumber}</td>
                     <td>${destination}</td>
                     <td>${arrival.originStopId}</td>
                     <td>${waitTime}</td>
                     <td>${arrivalTime}</td>
-                    <td class="col-details">${statusText}</td>
                     <td class="col-details">${vehicleId}</td>
+                    <td class="col-details">${vehicleModel}</td>
+                    <td class="col-details">${vehicleCapacity}</td>
+                    <td class="col-details">${statusText}</td>
                 </tr>
             `;
         });
@@ -629,10 +719,9 @@ function parseScheduledTime(timeString, returnTimestamp = false) {
 
     let arrivalTimestamp = scheduledDate.getTime();
     
-    // Trata os horários do dia (ex: 10:00:00 às 09:55:00). 
     // Se o horário calculado (após o tratamento das 24h) já tiver passado no dia de hoje, assume-se que é uma partida de amanhã.
-    // Usa-se um buffer de 5 minutos (5 * 60 * 1000) para manter o autocarro no ecrã um pouco depois de passar.
-    if (arrivalTimestamp < now.getTime() - (5 * 60 * 1000) ) {
+    // Usa um buffer de 60 minutos para manter o registo do autocarro no ecrã no dia de hoje no caso de acontecerem atrasos.
+    if (arrivalTimestamp < now.getTime() - (60 * 60 * 1000) ) {
         arrivalTimestamp += (24 * 60 * 60 * 1000);
     }
 

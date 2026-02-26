@@ -1,3 +1,6 @@
+// Programação no lado do servidor (backend), incluindo a recepção e o processamento de dados da API Carris Metropolitana.
+// Server-side (backend) programming, including receiving and processing data from the Carris Metropolitana API.
+
 // Carrega as variáveis do arquivo .env para o process.env
 require('dotenv').config();
 
@@ -8,28 +11,31 @@ const path = require('path');
 const app = express();
 
 // Usa a variável de ambiente OU a string hardcoded como fallback (caso o .env falhe)
-const CMET_API_BASE = process.env.CMET_API_BASE || 'https://api.carrismetropolitana.pt/'; // Link base da API
-const CMET_ARRIVALS_API = 'v2/arrivals/by_stop/' // API que retorna as chegadas por paragem
-const CMET_STOPS_API = 'v2/stops'; // API que retorna as paragens
-const CMET_PATTERNS_API = 'patterns/'; // API para retornar as patterns de linha
+const CMET_API_BASE = process.env.CMET_API_BASE || 'https://api.carrismetropolitana.pt/'; // Link base da API.
+const CMET_ARRIVALS_API = 'v2/arrivals/by_stop/' // API que retorna as chegadas por paragem.
+const CMET_STOPS_API = 'v2/stops'; // API que retorna as paragens.
+const CMET_PATTERNS_API = 'patterns/'; // API para retornar as patterns de linha.
+const CMET_VEHICLES = 'v2/vehicles'; // API para retornar os veículos.
 const PORT = process.env.PORT || 8081;
 
 // Middleware para servir ficheiros estáticos da pasta 'www'
 app.use(express.static(path.join(__dirname, 'www')));
 app.use(express.json());
-// Middleware para o website utilizador o HSTS (HTTP Strict Transport Security) por 90 dias, incluíndo os subdomínios (e sem preload).
+// Middleware para o website utilizador o HSTS (HTTP Strict Transport Security) por 90 dias, incluindo os subdomínios (e sem preload).
 app.use(helmet.hsts({maxAge: 90 * 24 * 60 * 60, force: true, includeSubDomains: true}));
 
 let stopNameCache = {}; // Caching para os nomes das paragens { "stopId": "Nome da Paragem" }
 let patternStopFinalCache = {}; // Caching para o ID da última paragem de um pattern { "patternId": "stopIdFinal" }
 let stopPatternCache = {}; // Caching para os pattern IDs de uma paragem { "stopId": ["patternId1", "patternId2"] }
-let cacheLoaded = false;
+let vehicleCache = {}; 
+let vehicleCacheLoaded = false;
+let stopCacheLoaded = false;
 
 /**
  * Função para buscar e popular a cache de nomes de paragens
  */
 async function loadStopNames() {
-    if (cacheLoaded) return;
+    if (stopCacheLoaded) return;
     
     console.log('A carregar nomes de paragens da API...');
 
@@ -51,7 +57,7 @@ async function loadStopNames() {
                 }
                 return acc;
             }, {});
-            cacheLoaded = true;
+            stopCacheLoaded = true;
             console.log(`Cache de paragens carregada com ${Object.keys(stopNameCache).length} entradas.`);
         } else {
             console.error('Erro ao carregar a API de paragens:', response.status);
@@ -64,7 +70,7 @@ async function loadStopNames() {
 /**
  * Busca o ID da paragem final para um determinado Pattern ID.
  * @param {string} patternId - O ID do pattern de rota (ex: 2708_0_1).
- * @returns {Promise<string|null>} - O stop_id da última paragem ou null em caso de erro/invalidez.
+ * @returns {Promise<string|null>} - O stop_id da última paragem ou null em caso de erro/invalidade.
  */
 async function getFinalStopId(patternId) {
     if (!patternId) return null;
@@ -162,6 +168,33 @@ async function getpatternIdsForStop(stopId) {
     return stopPatternCache[key];
 }
 
+/**
+ * Busca os modelos e capacidade dos veículos.
+ * @param {string} vehicleId - O ID do veículo (ex: 43|2338).
+ * @returns {Promise<string|null>} - O vehicle_id do veículo ou null em caso de erro/invalidade.
+ */
+async function loadVehicles(vehicleId) {
+    if (vehicleCacheLoaded) return;
+
+    try {
+        const response = await fetch(`${CMET_API_BASE}${CMET_VEHICLES}`, { timeout: 10000 });
+        if (response.ok) {
+            const data = await response.json();
+            vehicleCache = data.reduce((acc, vehicle) => {
+                acc[vehicle.id] = vehicle;
+                return acc;
+            }, {});
+            vehicleCacheLoaded = true;
+            console.log(`Cache de veículos carregada com ${Object.keys(vehicleCache).length} entradas.`);
+        } else {
+            console.error('Erro ao carregar a API de veículos:', response.status);
+        }
+    } catch (error) {
+        console.error('Erro de rede ao carregar a API de veículos:', error);
+    }
+    return null;
+}
+
 // Variável auxiliar para fazer uma pausa nos pedidos, evitando que sobrecarregue os pedidos na API.
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -206,7 +239,8 @@ async function fetchSingleStopData(currentStopId) {
 }
 
 app.post('/api/arrivals', async (req, res) => {
-    if (!cacheLoaded) await loadStopNames();
+    if (!stopCacheLoaded) await loadStopNames();
+    if (!vehicleCacheLoaded) await loadVehicles();
     
     const { stopIds } = req.body;
 
@@ -241,6 +275,15 @@ app.post('/api/arrivals', async (req, res) => {
         const finalResults = results.map(result => {
             if (result.data) {
                 result.stopName = stopNameCache[result.stopId] || `Paragem Inexistente`;
+
+                result.data = result.data.map(arrival => {
+                    const vehicleId = arrival.vehicle_id;
+                    const vehicleData = vehicleCache[vehicleId] || null;
+                    return {
+                        ...arrival,
+                        vehicleDetails: vehicleData
+                    };
+                });
             }
             return result;
         });

@@ -1,3 +1,4 @@
+/* Fontes e estilos da página HTML | HTML page fonts and styles */
 body {
     font-family: 'Lexend';
     background-color: #000;
@@ -72,8 +73,14 @@ a {
     color: #fff;
 }
 
-#search-button:disabled, #toggle-view-button:disabled, #details-button:disabled {
+#search-button:disabled {
     background-color: #000;
+    cursor: not-allowed;
+}
+
+#toggle-view-button:disabled, #details-button:disabled {
+    background-color: #333;
+    color: #333;
     cursor: not-allowed;
 }
 
@@ -160,17 +167,37 @@ a {
     border-bottom: none;
 }
 
+/* Linha em destaque quando o autocarro está a chegar. */
+.is-arriving {
+    animation: pulse-arrival 2s infinite ease-in-out;
+}
+
+/* Animação de pulsação suave a informação acima. */
+@keyframes pulse-arrival {
+    0% { background-color: rgba(255, 204, 0, 0); }
+    50% { background-color: rgba(255, 204, 0, 0.33); }
+    100% { background-color: rgba(255, 204, 0, 0); }
+}
+
 /* Cores (Status) - Linhas da Tabela */
 .master-arrivals-table tbody tr.status-realtime {
     color: #00ff00;
+}
+
+.master-arrivals-table tbody tr.status-semi-delayed {
+    color: #ff7700;
 }
 
 .master-arrivals-table tbody tr.status-delayed {
     color: #ff0000;
 }
 
-.master-arrivals-table tbody tr.status-ahead {
+.master-arrivals-table tbody tr.status-semi-ahead {
     color: #00ffff;
+}
+
+.master-arrivals-table tbody tr.status-ahead {
+    color: #7777ff;
 }
 
 .master-arrivals-table tbody tr.status-scheduled {
