@@ -1,4 +1,3 @@
-<!-- Página estática da aplicação | Application's static page -->
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -15,23 +14,26 @@
     <main class="hide-details">
         <section class="input-section">
             <h2>Escolha as suas paragens</h2>
-            <p>Introduza os <a onclick="showID()" style="color:#FFDD00">IDs</a> das paragens (separadas por vírgulas) para visualizar os horários das paragens.</p>
+            <p>Introduza os <a onclick="showID()">IDs</a> das paragens (separadas por vírgulas) para visualizar os horários das paragens.</p>
 
             <form id="stops-form">
-                <textarea id="stop-ids" rows="3" placeholder="IDs das paragens (separados por vírgula)"></textarea>
-                <button type="submit" id="search-button">
-                    <span id="button-text">Consultar Tempos</span>
-                    <span id="loading-spinner" style="display:none;">A carregar...</span>
-                </button>
-                <button id="toggle-view-button" style="display:none;">Ver Tabela Mestre</button>
-                <button id="details-button" style="display:none;">Mostrar Detalhes</button>
+                <textarea id="stop-ids" rows="3" placeholder="020001, 020003" aria-label="IDs das paragens separados por vírgula"></textarea>
+                
+                <div class="button-group">
+                    <button type="submit" id="search-button">
+                        <span id="button-text">Consultar Tempos</span>
+                        <span id="loading-spinner" style="display:none;">A carregar...</span>
+                    </button>
+                    
+                    <button type="button" id="toggle-view-button" style="display:none;">Ver Tabela Mestre</button>
+                    <button type="button" id="details-button" style="display:none;">Mostrar Detalhes</button>
+                </div>
             </form>
         </section>
 
         <section class="results-section">
             <h2>Resultados</h2>
             <div id="results-container">
-                <p class="placeholder-text">Introduza os IDs das paragens e clique em "Consultar Tempos" para ver os resultados.</p>
             </div>
         </section>
     </main>

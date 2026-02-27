@@ -1,60 +1,68 @@
 /* Fontes e estilos da página HTML | HTML page fonts and styles */
-body {
-    font-family: 'Lexend';
+
+/* --- Base e Reset --- */
+* { /* Define que o padding e a borda não aumentam a largura total dos elementos, evitando quebras de layout */
+    box-sizing: border-box; 
+}
+
+body { /* Define a fonte principal, cor de fundo preta e cor de texto branca */
+    font-family: 'Lexend', sans-serif;
     background-color: #000;
     color: #fff;
     margin: 0;
     padding: 0;
+    line-height: 1.5; /* Melhora a leitura do texto com um espaçamento entre linhas de 1.5 */
 }
 
-header {
+header { /* Cabeçalho fixo no topo com fundo preto e texto amarelo */
     background-color: #000;
     color: #ffdd00;
     padding: 20px;
     text-align: center;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-header h1 {
+header h1 { /* Fonte adaptável: min 1.8rem, escala com a largura do ecrã, max 2.5rem */
     font-size: clamp(1.8rem, 5vw, 2.5rem);
     margin: 0;
 }
 
-main {
-    max-width: 1000px;
+main { /* Define a largura máxima do conteúdo e centra-o horizontalmente */
+    max-width: 1500px;
     margin: 20px auto;
     padding: 0 20px;
+    display: table;
 }
 
-/* --- Input --- */
-.input-section {
-    background-color: #333;
+/* --- Secção de Input --- */
+.input-section { /* Bloco para destacar a área de introdução de IDs */
+    background-color: #1a1a1a;
     color: #fff;
     padding: 25px;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     margin-bottom: 30px;
 }
 
 a {
     cursor: pointer;
+    color:#FFDD00;
+    text-decoration: underline;
 }
 
-#stops-form textarea {
-    font-family: 'Lexend';
+#stops-form textarea { /* Herda a fonte do corpo, ocupa toda a largura e define cores para o campo de texto */
+    font-family: inherit;
     width: 100%;
-    padding: 10px;
-    margin-top: 15px;
-    margin-bottom: 15px;
-    border: 1px solid #ccc;
+    padding: 12px;
+    margin: 15px 0;
+    border: 1px solid #444;
+    background: #000;
+    color: #fff;
     border-radius: 4px;
-    box-sizing: border-box;
     font-size: 16px;
-    resize: vertical;
+    resize: vertical; /* Permite ao utilizador redimensionar a caixa apenas verticalmente */
 }
 
-/* Botões (Search e Toggle View) */
-#search-button, #toggle-view-button, #details-button {
+/* --- Botões --- */
+button {
     font-family: 'Lexend', sans-serif;
     background-color: #ffdd00;
     color: #000;
@@ -62,67 +70,68 @@ a {
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: bold;
-    transition: background-color 0.3s;
+
+    /* Suaviza a transição de cores ao passar o rato */
+    transition: all 0.3s ease;
     margin-right: 10px;
+    margin-bottom: 5px;
 }
 
-#search-button:hover:not(:disabled), #toggle-view-button:hover:not(:disabled), #details-button:hover:not(:disabled) {
+button:hover:not(:disabled) { /* Escurece o amarelo e muda o texto para branco ao passar o rato */
     background-color: #b49c00;
     color: #fff;
 }
 
-#search-button:disabled {
-    background-color: #000;
+button:disabled { /* Botões desativados ficam cinzentos e mostram o cursor "não permitido" */
+    background-color: #333; 
+    color: #666;
     cursor: not-allowed;
 }
 
-#toggle-view-button:disabled, #details-button:disabled {
-    background-color: #333;
-    color: #333;
-    cursor: not-allowed;
-}
-
-#loading-spinner {
+#loading-spinner { /* Estilo para o texto "A carregar..." */
     font-style: italic;
     color: #fff;
     margin-left: 10px;
 }
 
-/* --- Secção de Resultados --- */
+/* --- Resultados --- */
 .results-section h2 {
+    /* Linha branca por baixo do título de resultados */
     border-bottom: 2px solid #fff;
     padding-bottom: 10px;
     margin-bottom: 20px;
+
+    /* Distribui o título e o botão de toggle para os cantos opostos */
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-/* Container de resultados para o modo individual */
-#results-container {
+#results-container { /* Grid para o modo de visualização Individual (paragens em blocos) */
     display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min-content, max-content));
+    justify-content: center;
     gap: 20px;
+    width: 100%;
 }
 
-.stop-arrival {
-    background-color: #333;
-    border: 3px solid #ffdd00;
+.stop-arrival { /* Cartão de cada paragem no modo individual */
+    background-color: #1a1a1a;
+    border: 2px solid #ffdd00;
     padding: 15px;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    border-radius: 6px;
+    display: grid;
+    height: fit-content;
 }
 
 .stop-arrival h3 {
     margin-top: 0;
     color: #ffdd00;
-    font-size: 1.2em;
-    padding-bottom: 5px;
-    border-bottom: 1px dashed #eee;
-    margin-bottom: 15px;
+    border-bottom: 1px dashed #444;
+    padding-bottom: 10px;
 }
-
 .no-arrivals, .placeholder-text {
     font-style: italic;
     color: #6c757d;
@@ -143,159 +152,80 @@ a {
     margin-left: 10px;
 }
 
-/* --- Tabela --- */
-.master-arrivals-table {
+/* --- Tabela e Visibilidade --- */
+.master-arrivals-table { /* Ocupa toda a largura disponível e remove espaços entre células */
     width: 100%;
     border-collapse: collapse;
+    margin-top: 10px;
+    align-items: center;
 }
 
-.master-arrivals-table th, .master-arrivals-table td {
-    padding: 10px 15px;
-    text-align: left;
-    border-bottom: 1px solid #555;
+.master-arrivals-table th, 
+.master-arrivals-table td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #333;
 }
 
-.master-arrivals-table thead th {
+.master-arrivals-table thead th { /* Cabeçalho da tabela com fundo cinzento e texto amarelo em maiúsculas */
     background-color: #222;
     color: #ffdd00;
-    font-weight: bold;
     text-transform: uppercase;
-    font-size: 0.9em;
+    font-size: 0.85em;
 }
 
-.master-arrivals-table tbody tr:last-child td {
-    border-bottom: none;
+.col-details { /* Define que as colunas com esta classe são células de tabela normais */
+    display: table-cell; 
 }
 
-/* Linha em destaque quando o autocarro está a chegar. */
-.is-arriving {
+.hide-details .col-details { /* Se o elemento <main> tiver a classe 'hide-details', esconde as colunas marcadas */
+    display: none !important;
+}
+
+.master-arrivals-table td:first-child { /* O ID da linha (coluna 1) será sempre amarelo e negrito */
+    color: #ffdd00;
+    font-weight: bold;
+}
+
+/* --- Estados de Tempo Real (Status) --- */
+
+/* Força a cor com !important para garantir que o status prevalece sobre outros estilos */
+.status-delayed { color: #ff5555 !important; }       /* Vermelho: Atrasado */
+.status-semi-delayed { color: #ffaa00 !important; }  /* Laranja: Ligeiro atraso */
+.status-realtime { color: #00ff88 !important; }      /* Verde: Tempo real ativo */
+.status-semi-ahead { color: #00e5ff !important; }    /* Ciano: Ligeiro adiantamento */
+.status-ahead { color: #9999ff !important; }         /* Roxo: Adiantado */
+.status-scheduled { color: #bbb !important; }        /* Cinzento: Apenas horário planeado */
+
+.is-arriving { /* Classe aplicada via JS quando faltam menos de 2 minutos para a chegada */
     animation: pulse-arrival 2s infinite ease-in-out;
 }
 
-/* Animação de pulsação suave a informação acima. */
-@keyframes pulse-arrival {
-    0% { background-color: rgba(255, 204, 0, 0); }
-    50% { background-color: rgba(255, 204, 0, 0.33); }
-    100% { background-color: rgba(255, 204, 0, 0); }
+@keyframes pulse-arrival { /* Animação que faz o fundo da linha piscar suavemente em amarelo */
+    0%, 100% { background-color: rgba(255, 204, 0, 0.05); }
+    50% { background-color: rgba(255, 204, 0, 0.25); }
 }
 
-/* Cores (Status) - Linhas da Tabela */
-.master-arrivals-table tbody tr.status-realtime {
-    color: #00ff00;
-}
-
-.master-arrivals-table tbody tr.status-semi-delayed {
-    color: #ff7700;
-}
-
-.master-arrivals-table tbody tr.status-delayed {
-    color: #ff0000;
-}
-
-.master-arrivals-table tbody tr.status-semi-ahead {
-    color: #00ffff;
-}
-
-.master-arrivals-table tbody tr.status-ahead {
-    color: #7777ff;
-}
-
-.master-arrivals-table tbody tr.status-scheduled {
-    color: #ffffff;
-}
-
-.individual-table td:nth-child(1), .master-arrivals-table td:nth-child(1) {
-    color: #ffdd00;
-}
-
-.master-arrivals-table td:nth-child(6), .individual-table td:nth-child(5) {
-    font-style: italic;
-}
-
-.col-details {
-    display: table-cell !important;
-}
-
-.hide-details .col-details {
-    display: none !important;
-}
-
-.hide-details .master-arrivals-table th:nth-child(6),
-.hide-details .master-arrivals-table th:nth-child(7),
-.hide-details .individual-table th:nth-child(5),
-.hide-details .individual-table th:nth-child(6) {
-    display: none !important;
-}
-
-.master-arrivals-table td:nth-child(6),
-.master-arrivals-table td:nth-child(7),
-.individual-table td:nth-child(5),
-.individual-table td:nth-child(6) {
-    display: table-cell;
-}
-
-/* Responsividade */
-@media (max-width: 600px) {
-    main {
-        margin: 10px auto;
-        padding: 0 10px;
-    }
-
-    .input-section {
-        padding: 15px;
-    }
-
-    #search-button, #toggle-view-button, #details-button {
+/* --- Responsividade (Telemóveis e Tablets) --- */
+@media (max-width: 768px) {
+    #search-button, #toggle-view-button, #details-button { /* Em ecrãs pequenos, os botões ocupam a largura toda e empilham-se */
         width: 100%;
         margin-right: 0;
-        margin-bottom: 15px;
-        padding: 10px;
-        font-size: 16px;
-    }
-    
-    #stops-form textarea {
-        font-size: 14px;
+        margin-bottom: 10px;
     }
 
-    .master-arrivals-table, .individual-table {
-        font-size: 0.85em;
+    .master-arrivals-table { /* Permite que a tabela tenha scroll lateral se for muito larga para o telemóvel */
         display: block;
-        width: 100%;
-        overflow-x: auto;
-    }
-
-    footer {
-        font-size: 0.8em;
-        padding: 10px;
+        overflow-x: auto; 
+        white-space: nowrap;
     }
 }
 
-/* Tablets (Ecrãs médios, 601px a 1024px) */
-@media (min-width: 601px) and (max-width: 1024px) {
-    main {
-        padding: 0 15px;
-    }
-
-    #search-button, #toggle-view-button, #details-button {
-        margin-bottom: 15px;
-    }
-
-    .master-arrivals-table, .master-arrivals-table th, .master-arrivals-table td {
-        padding: 8px 12px;
-        font-size: 0.9em;
-    }
-
-    .hide-details .col-details {
-        display: none !important;
-    }
-}
-
-/* --- Rodapé --- */
-footer {
+footer { /* Rodapé centrado com cor cinza discreta e linha de separação */
     text-align: center;
-    padding: 15px;
-    margin-top: 30px;
-    border-top: 1px solid #6c757d;
-    color: #6c757d;
-    font-size: 0.9em;
+    padding: 20px;
+    margin-top: 40px;
+    border-top: 1px solid #333;
+    color: #666;
+    font-size: 0.85em;
 }

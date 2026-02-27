@@ -14,7 +14,7 @@ Apesar de a Carris Metropolitana já ter desenvolvido um sistema de paragens int
 **"Por que usar os IDs das paragens para pesquisar as paragens em vez de usar os nomes destas?"**
 - **1. Os IDs são valores mais estáveis do que os nomes**
 
-    Um utilizador que está mais atento aos detalhes das paragens à sua volta (seja no terreno, seja no [website](https://carrismetropolitana.pt)) conseguirá perceber que algumas paragens mudaram os seus nomes desde o início da operação da Carris Metropolitana (como [esta](https://carrismetropolitana.pt/stops/100234) (poderá ver isso no tutorial de utilização)). Caso a aplicação utilizasse os nomes para buscar os valores das paragens, algumas destas poderiam não funcionar corretamente, enquanto os IDs são valores mais estáveis para retornar os dados corretamente.
+    Um utilizador que está mais atento aos detalhes das paragens à sua volta (seja no terreno, seja no [website](https://carrismetropolitana.pt)) conseguirá perceber que algumas paragens mudaram os seus nomes desde o início da operação da Carris Metropolitana (como [esta](https://carrismetropolitana.pt/stops/020001) (poderá ver isso no tutorial de utilização)). Caso a aplicação utilizasse os nomes para buscar os valores das paragens, algumas destas poderiam não funcionar corretamente, enquanto os IDs são valores mais estáveis para retornar os dados corretamente.
 
 - **2. Praticidade**
     
@@ -24,7 +24,7 @@ Apesar de a Carris Metropolitana já ter desenvolvido um sistema de paragens int
 ![alt text](www/images/destinos.png)
 - **Carris Metropolitana**
     
-    No caso apresentado, em que as linhas 2772 e 2750 têm nomes diferentes para o mesmo destino (Campo Grande), o resultado apresentado provém diretamente de todos os dados recebidos da API da Carris Metropolitana, não sendo, portanto, da responsabilidade direta do site.
+    No caso apresentado, em que as linhas 1704 e 3715 têm nomes diferentes para o mesmo destino (Marquês de Pombal), o resultado apresentado provém diretamente de todos os dados recebidos da API da Carris Metropolitana, não sendo, portanto, da responsabilidade direta do site.
 
 **"Haverá futuras atualizações?"**
 - **Possivelmente**
@@ -53,11 +53,7 @@ Pronto, a aplicação estará pronta a ser usada.
 ---
 
 ### Como Utilizar? (🇵🇹)
-**NOTA:** Para exemplificar, as seguintes paragens serão usadas no decorrer de toda a aplicação:
-- Av Dr José Pontes Fte 5 (**030461**), na Reboleira (Amadora)
-- Av 25 Abril 87 (Jardim Radial) (**110319**), no Jardim da Radial (Odivelas)
-- CORROIOS(R CID ALMADA) FARMACIA MERCADO (**140690**), em Corroios (Seixal)
-- SETÚBAL (AV BENTO GONÇ)CENTRO COMERCIAL (**160066**), em Setúbal
+**NOTA:** Para exemplificar, as paragens **020001** e **020003** serão usadas como exemplos no decorrer de toda a aplicação.
 
 ---
 
@@ -69,7 +65,7 @@ Pronto, a aplicação estará pronta a ser usada.
 
     No menu irá deparar-se com uma caixa de texto, onde o utilizador irá introduzir os IDs das paragens que desejar. De notar que, quantas mais paragens serem pedidas, mais tempo o pedido poderá retornar resultados. Como já referido, os IDs das paragens serão os valores bases para utilizar no website. Caso o utilizador esteja em dúvida o que seria o ID de uma paragem:
     
-    - No terreno estão localizados no canto inferior do semi-círculo amarelo dos postaletes, com uma nomenclatura normalmente de "COD. (ID da paragem)". **Esse é o valor que o utilizador precisa para o website**, como já explicado.
+    - No terreno, está localizado no canto inferior do semi-círculo amarelo dos postaletes, com uma nomenclatura normalmente de "COD. (ID da paragem)". **Esse é o valor que o utilizador precisa para o website**, como já explicado.
     
         ![alt text](www/images/id_terreno.png)
 
@@ -81,7 +77,7 @@ Pronto, a aplicação estará pronta a ser usada.
 
         **Figura 3:** Página da paragem da Figura 2 no site da Carris Metropolitana.
 
-    Caso o utilizador já tenho feita uma pesquisa anteriormente, os dados serão guardados automaticamente numa cookie que guarda os IDs das paragens, garantindo assim que o utilizador não tenha de voltar a escrever os IDs sempre que tenha de reentrar no website.
+    Caso o utilizador já tenho feita uma pesquisa anteriormente, os últimos dados serão guardados automaticamente numa cookie que guarda os IDs das paragens, garantindo assim que o utilizador não tenha de voltar a escrever os IDs sempre que tenha de reentrar no website.
 
 ---
 
@@ -93,15 +89,15 @@ Pronto, a aplicação estará pronta a ser usada.
     ![alt text](www/images/tabela_individual_detalhes.png)
     **Figura 4.2:** Exemplo de uma tabela individual com os detalhes adicionais
 
-    A tabela em si é fácil de entender: mostra a paragem pesquisada, as linhas que servem essa paragem com o seu destino, o tempo de espera que o utilizador terá até o autocarro chegar na hora prevista e o veículo que faz esse horário.
+    As informações na tabela são diretas: Mostra a paragem pesquisada, as linhas que servem essa paragem com os seus destinos, quando tempo faltará até o autocarro chegar na hora de chegada prevista e o veículo (identificação, modelo e capacidade) que faz esse horário, ordenados respetivamente. A única exceção é o estado, mas também é simples de entender.
 
-    A única exceção é o tipo de horário, mas também é simples de entender. Como a Carris Metropolitana usa tempo real nos seus autocarros, é mais preciso detectar quando um autocarro chega a uma paragem, permitindo ao utilizador antecipar com antecedência se um autocarro está adiantado, pontual ou atrasado (ou se o tempo real está desativado).
+    Como a Carris Metropolitana usa tempo real nos seus autocarros, isso torna mais preciso detectar quando um autocarro chega a uma paragem, permitindo ao utilizador antecipar com antecedência se um autocarro está adiantado, pontual ou atrasado.
 
     Para facilitar a visualização destes tipos de horários, foram utilizadas seis cores no total (todas para cada tipo de horário):
 
     - **Ciano:** Horário em tempo real, com o autocarro a circular 1 a 5 minutos antes do horário previsto.
 
-    - **Azul:** Horário em tempo real, com o autocarro a circular mais de 5 minutos antes do horário previsto.
+    - **Roxo:** Horário em tempo real, com o autocarro a circular mais de 5 minutos antes do horário previsto.
     
     - **Verde:** Horário em tempo real, com o autocarro a circular dentro do horário previsto.
 
@@ -109,7 +105,7 @@ Pronto, a aplicação estará pronta a ser usada.
 
     - **Vermelho:** Horário em tempo real, com o autocarro a circular com mais de 5 minutos de atraso em relação ao horário previsto.
 
-    - **Branco:** Horário programado, sem dados em tempo real disponíveis (normalmente aplicável em paragens terminais ou horários com o tempo real desativado).
+    - **Cinzento:** Horário programado, sem dados em tempo real disponíveis (normalmente aplicável em paragens terminais ou horários com o tempo real desativado).
 
     Note que as tabelas mostrarão apenas os próximos 10 horários que estão dentro dos próximos 60 minutos. Se nenhum resultado for encontrado dentro dessas condições, nenhum horário será retornado (por exemplo, se uma pesquisa for feita às 3h da manhã, a maioria das paragens não terá resultados retornados porque a maioria dos autocarros não estaria a circular a essa hora).
 
@@ -117,7 +113,7 @@ Pronto, a aplicação estará pronta a ser usada.
 
     Por último, uma opção importante que resta é o botão «Mostrar/Ocultar detalhes». Ele permite ao utilizador mostrar/ocultar determinados detalhes (como horário, tipo de veículo e sua capacidade).
 
-    No exemplo que vemos acima, as linhas 3513 e 3525 estão adiantadas em relação ao horário calendarizado, enquanto a linha 3527 (em branco) neste caso ainda não iniciou o serviço (porém, alguns horários calendarizados podem indicar que o tempo real está desativado/com um erro ou começam nessa paragem). De também notar que como o autocarro da 3513 está próximo da paragem, o fundo do registo desta está piscando, como esperado.
+    No exemplo que vemos acima, a linha 3717 está pontual ao horário calendarizado, a linha 4725 está adiantada ao horário calendarizado, a linha 3721 está ligeiramente adiantada ao horário calendarizado, a linha 3705 está ligeiramente atrasada ao horário calendarizado e as linhas 3703 e 3710 estão atrasadas ao horário calendarizado. As restantes linhas (em cinzento) neste caso ainda não iniciou o serviço (porém, alguns horários calendarizados podem indicar que ou o tempo real está desativado ou com um erro, ou que específica linha começa nessa paragem). De também notar que, mais para baixo, como o autocarro da 3717 está próximo da paragem, o fundo do registo desta está piscando, como esperado.
 
 ---
 
@@ -129,7 +125,7 @@ Pronto, a aplicação estará pronta a ser usada.
     ![alt text](www/images/tabela_mestre_detalhes.png)
     **Figura 5.2:** Exemplo de uma tabela mestre com detalhes
 
-    O sistema deste tipo de tabela é igual ao das tabelas individuais, excetuando o facto dos nomes não serem incluídos e a coluna "paragem", que apenas indica o ID da paragem a que esse horário está associado.
+    O sistema deste tipo de tabela é igual ao das tabelas individuais, excetuando o facto dos nomes das paragens não serem incluídos e a inclusão coluna "paragem", que apenas indica o ID da paragem a que esse horário está associado.
 
 ---
 
@@ -157,7 +153,7 @@ Although Carris Metropolitana has already developed a smart stop system that all
 ![alt text](www/images/destinos.png)
 - **Carris Metropolitana**
     
-    In the case shown, where lines 2772 and 2750 have different names for the same destination (Campo Grande), the result shown comes directly from all the data received comes from the Carris Metropolitana API, and is therefore not the direct responsibility of the website.
+    In the case presented, where lines 1704 and 3715 have different names for the same destination (Marquês de Pombal), the result shown comes directly from all the data received from the Carris Metropolitana API and is therefore not the direct responsibility of the website.
 
 **“Will there be future updates?”**
 - **Possibly**
@@ -186,11 +182,7 @@ That's it, the application is ready to use.
 ---
 
 ### How to use it? (🇬🇧)
-**NOTE:** For illustrative purposes, the following stops will be used throughout the application:
-- Av Dr José Pontes Fte 5 (**030461**), in Reboleira (Amadora)
-- Av 25 Abril 87 (Jardim Radial) (**110319**), in Jardim da Radial (Odivelas)
-- CORROIOS(R CID ALMADA) FARMACIA MERCADO (**140690**), in Corroios (Seixal)
-- SETÚBAL (AV BENTO GONÇ)CENTRO COMERCIAL (**160066**), in Setúbal
+**NOTE:** For illustrative purposes, stops **020001** and **020003** will be used as examples throughout the application.
 
 ---
 
@@ -202,7 +194,7 @@ That's it, the application is ready to use.
 
     In the menu, you will see a text box where you can enter the IDs of the stops you want. Please note that the more stops you request, the longer it will take for the request to return results. As mentioned above, the stop IDs will be the base values to use on the website. If you are unsure what a stop ID is:
     
-    - On the ground, they are located at the bottom corner of the yellow semi-circle of the bus stops, usually labelled "COD. (Stop ID)". **This is the value that the user needs for the website**, as already explained.
+    - On the ground, it's located at the bottom corner of the yellow semi-circle of the bus stops, usually labelled "COD. (Stop ID)". **This is the value that the user needs for the website**, as already explained.
     
         ![alt text](www/images/id_terreno.png)
 
@@ -214,7 +206,7 @@ That's it, the application is ready to use.
 
         **Figure 3:** Page for the stop in Figure 2 on the Carris Metropolitana website.
 
-    If the user has already performed a search previously, the data will be automatically stored in a cookie that saves the stop IDs, thus ensuring that the user does not have to re-enter the IDs each time they return to the website.
+    If the user has already performed a search previously, the last data will be automatically stored in a cookie that saves the stop IDs, thus ensuring that the user does not have to re-enter the IDs each time they return to the website.
 
 ---
 
@@ -226,15 +218,15 @@ That's it, the application is ready to use.
     ![alt text](www/images/tabela_individual_detalhes.png)
     **Figure 4.2:** Example of an individual table with the additional details
 
-    The table itself is easy to understand: it shows the stop searched, the lines serving that stop with its destination, the waiting time that the user will have until the bus arrives at the scheduled time and the vehicle doing that schedule.
+    The information in the table is straightforward: it shows the stop searched for, the routes that serve that stop with their destinations, how long it will take for the bus to arrive at the scheduled arrival time, and the vehicle (identification, model, and capacity) that runs that route, sorted respectively. The only exception is the type of timetable, but it is also simple to understand.
 
-    The only exception is the type of timetable, but it is also simple to understand. Because Carris Metropolitana uses real time on its buses, it is more accurate to detect when a bus arrives at a stop, allowing the user to anticipate in advance if a bus is early, on time or late (or if the real time is deactivated).
+    Because Carris Metropolitana uses real time on its buses, this makes more accurate to detect when a bus arrives at a stop, allowing the user to anticipate in advance if a bus is early, on time or late.
 
     To make it easier to view these types of timetables, six colours in total were used (all for each type of timetable):
 
     - **Cyan:** Real-time timetable, with the bus running 1 to 5 minutes ahead of schedule.
 
-    - **Blue:** Real-time timetable, with the bus running more than 5 minutes ahead of schedule.
+    - **Purple:** Real-time timetable, with the bus running more than 5 minutes ahead of schedule.
     
     - **Green:** Real-time schedule, with the bus running on time relative to the scheduled timetable.
 
@@ -242,7 +234,7 @@ That's it, the application is ready to use.
 
     - **Red:** Real-time schedule, with the bus running more than 5 minutes behind the scheduled timetable.
 
-    - **White:** Scheduled timetable, no real-time data available (usually applicable at terminal stops or schedules with the real time deactivated).
+    - **Grey:** Scheduled timetable, no real-time data available (usually applicable at terminal stops or schedules with the real time deactivated).
 
     Please note that the tables will only show the next 10 times that are within the next 60 minutes. If no results are found within these conditions, no times will be returned (for example, if a search is made at 3 a.m., most stops will have no results returned because most buses would not be running at that time).
 
@@ -250,7 +242,7 @@ That's it, the application is ready to use.
 
     Finally, an important option that remains is the ‘Show/Hide details’ button. It allows the user to show/hide certain details (such as timetable, vehicle type and capacity).
 
-    In the example we see above, lines 3513 and 3525 are ahead of schedule, while line 3527 (in white) in this case has not yet started service (however, some scheduled times may indicate that real time is disabled/has an error or starts at that stop). It should also be noted that as the 3513 bus is close to the stop, the background of the record is flashing, as expected.
+    In the example above, line 3717 is running on time, line 4725 is ahead of schedule, line 3721 is slightly ahead of schedule, line 3705 is slightly behind schedule, and lines 3703 and 3710 are behind schedule. The remaining lines (in grey) in this case have not yet started service (however, some scheduled times may indicate that either real time is disabled or there is an error, or that a specific line starts at that stop). Also note that further down, as the 3717 bus is close to the stop, the background of the record is flashing, as expected.
 
 
 ---
@@ -263,4 +255,4 @@ That's it, the application is ready to use.
     ![alt text](www/images/tabela_mestre_detalhes.png)
     **Figure 5.2:** Example of a master table with details
 
-    The system for this type of table is the same as for individual tables, except that names are not included and the ‘stop’ column only indicates the ID of the stop to which that timetable is associated.
+    The system for this type of table is the same as for individual tables, except for the fact that the names of the stops are not included and the inclusion of the ‘stop’ column, which only indicates the ID of the stop to which that timetable is associated.
