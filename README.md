@@ -115,6 +115,8 @@ Pronto, a aplicação estará pronta a ser usada.
 
     No exemplo que vemos acima, a linha 3717 está pontual ao horário calendarizado, a linha 4725 está adiantada ao horário calendarizado, a linha 3721 está ligeiramente adiantada ao horário calendarizado, a linha 3705 está ligeiramente atrasada ao horário calendarizado e as linhas 3703 e 3710 estão atrasadas ao horário calendarizado. As restantes linhas (em cinzento) neste caso ainda não iniciou o serviço (porém, alguns horários calendarizados podem indicar que ou o tempo real está desativado ou com um erro, ou que específica linha começa nessa paragem). De também notar que, mais para baixo, como o autocarro da 3717 está próximo da paragem, o fundo do registo desta está piscando, como esperado.
 
+    De notar que, para otimização dos recursos e dos tempos de espera para as pesquisas, por defeito será criado um ficheiro pattern_cache.json na pasta do projeto que irá guardar todos os valores das paragens pesquisadas nas últimas 24 horas com a sua paragem de destino. Tal irá permitir evitar uma sobrecarga de pedidos da API para valores que o site já recebeu da mesma nas últimas 24 horas, permitindo assim uma maior eficiência nos pedidos ao mesmo tempo que receberá os valores atualizados da API.
+
 ---
 
 3. Também irá reparar que após pesquisar as paragens, irá aparecer um botão ao lado com a legenda "Tabela Mestre". É aqui que o website irá permitir que você possa juntar as várias paragens pesquisadas numa única tabela, como mostrado abaixo:
@@ -243,6 +245,8 @@ That's it, the application is ready to use.
     Finally, an important option that remains is the ‘Show/Hide details’ button. It allows the user to show/hide certain details (such as timetable, vehicle type and capacity).
 
     In the example above, line 3717 is running on time, line 4725 is ahead of schedule, line 3721 is slightly ahead of schedule, line 3705 is slightly behind schedule, and lines 3703 and 3710 are behind schedule. The remaining lines (in grey) in this case have not yet started service (however, some scheduled times may indicate that either real time is disabled or there is an error, or that a specific line starts at that stop). Also note that further down, as the 3717 bus is close to the stop, the background of the record is flashing, as expected.
+
+    Note that, in order to optimise resources and search waiting times, a pattern_cache.json file will be created by default in the project folder, which will store all the values of the stops searched in the last 24 hours with their destination stop. This will prevent an overload of API requests for values that the site has already received from it in the last 24 hours, thus allowing for greater efficiency in requests while receiving updated values from the API.
 
 
 ---

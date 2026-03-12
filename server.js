@@ -10,14 +10,16 @@ const helmet = require('helmet');    // Middleware de segurança para configurar
 const fetch = require('node-fetch'); // Biblioteca para fazer pedidos HTTP (API externas)
 const path = require('path');        // Utilitário para manipular caminhos de diretórios e ficheiros
 const app = express();               // Inicialização da aplicação Express
+const fs = require('fs');            // Sistema de ficheiros nativos do Node.js
 
-// Definição dos endpoints da API da Carris Metropolitana (CM)
+// Definição dos endpoints (maioria sendo da API da Carris Metropolitana (CM))
 const CMET_API_BASE = process.env.CMET_API_BASE || 'https://api.carrismetropolitana.pt/'; // Base URL
 const CMET_ARRIVALS_API = 'v2/arrivals/by_stop/' // Endpoint para chegadas em tempo real
 const CMET_STOPS_API = 'v2/stops';               // Endpoint para lista de paragens e metadados
 const CMET_PATTERNS_API = 'patterns/';           // Endpoint para detalhes de percursos (patterns)
 const CMET_VEHICLES = 'v2/vehicles';             // Endpoint para estado atual da frota
 const PORT = process.env.PORT || 8081;           // Porta onde o servidor vai correr
+const PATTERN_CACHE_FILE = path.join(__dirname, 'pattern_cache.json'); // Caminho para o ficheiro JSON (BD local)
 
 // Middlewares
 app.use(express.static(path.join(__dirname, 'www'))); // Serve ficheiros HTML/JS/CSS da pasta 'www'
@@ -32,6 +34,32 @@ let patternStopFinalCache = {};  // Guarda { patternId: "ultimoStopId" }
 let stopPatternCache = {};       // Guarda { stopId: [lista de patterns] }
 let vehicleCache = {};           // Guarda detalhes técnicos dos veículos (modelo, capacidade)
 let stopCacheLoaded = false;     // Flag para verificar se a base de paragens já foi carregada
+
+/**
+ * Transforma o objeto JavaScript num ficheiro JSON com os valores da última paragem e a data de atualização
+ */
+function savePatternCache() {
+    try {
+        fs.writeFileSync(PATTERN_CACHE_FILE, JSON.stringify(patternStopFinalCache, null, 2));
+    } catch (err) {
+        console.error('Erro ao gravar cache:', err);
+    }
+}
+
+/**
+ * Lê o ficheiro de cache ao iniciar o servidor. Se existir, restaura os dados para a variável 'patternStopFinalCache'
+ */
+function loadPatternCache() {
+    try {
+        if (fs.existsSync(PATTERN_CACHE_FILE)) {
+            patternStopFinalCache = JSON.parse(fs.readFileSync(PATTERN_CACHE_FILE, 'utf8'));
+            console.log(`Cache carregada: ${Object.keys(patternStopFinalCache).length} percursos.`);
+        }
+    } catch (err) {
+        // Em caso de erro (ex: JSON corrompido), inicializa um objeto vazio para evitar crashes
+        patternStopFinalCache = {};
+    }
+}
 
 /**
  * Atualiza a cache de veículos no background para não atrasar o pedido do utilizador
@@ -88,28 +116,56 @@ async function loadStopNames() {
 
 /**
  * Obtém o ID da paragem final de um percurso para filtrar autocarros que já terminaram a viagem
+ * @param {string} patternId - O identificador do percurso.
+ * @param {number} retries - Número de tentativas em caso de erro de rede.
  */
-async function getFinalStopId(patternId) {
+async function getFinalStopId(patternId, retries = 2) {
     if (!patternId) return null;
-    if (patternStopFinalCache[patternId]) return patternStopFinalCache[patternId]; // Retorna da cache se existir
 
-    try {
-        const response = await fetch(`${CMET_API_BASE}${CMET_PATTERNS_API}${patternId}`, { timeout: 5000 });
-        if (!response.ok) return null;
+    const cached = patternStopFinalCache[patternId];
+    
+    // Verifica a cache da memória, retornando-a se existir e for mais recente que 24 horas
+    if (cached && (Date.now() - cached.lastUpdated < 24 * 60 * 60 * 1000)) {
+        return cached.StopId; 
+    }
 
-        const patternData = await response.json();
-        const patternPath = patternData.path;
+    // Ciclo de tentativas para lidar com instabilidade da API (ex: ETIMEDOUT)
+    for (let i = 0; i <= retries; i++) {
+        try {
+            const response = await fetch(`${CMET_API_BASE}${CMET_PATTERNS_API}${patternId}`, { timeout: 10000 });
 
-        if (Array.isArray(patternPath) && patternPath.length > 0) {
-            const finalStopContainer = patternPath[patternPath.length - 1]; // Obtém a última paragem da lista
-            const finalStopId = String(finalStopContainer.stop?.id || finalStopContainer.stop?.stop_id || null);
-            if (finalStopId && finalStopId !== 'null') {
-                patternStopFinalCache[patternId] = finalStopId; // Guarda na cache para uso futuro
-                return finalStopId;
+            if (!response.ok) {
+                if (response.status === 404) return null; // Pattern inexistente (não precisa de ciclo)
+                throw new Error(`Status ${response.status}`);
             }
+
+            const patternData = await response.json();
+            const patternPath = patternData.path;
+        
+            if (Array.isArray(patternPath) && patternPath.length > 0) {
+                const finalStopContainer = patternPath[patternPath.length - 1]; // Obtém a última paragem da lista
+                const finalStopId = String(finalStopContainer.stop?.id || finalStopContainer.stop?.stop_id || null);
+                if (finalStopId && finalStopId !== 'null') {
+                    // Guarda a cache para uso futuro pelas próximas 24 horas
+                    patternStopFinalCache[patternId] = { 
+                        stopId: finalStopId,
+                        lastUpdated: Date.now()
+                    }; 
+                    savePatternCache(); // Sincroniza a memória guardando a cache localmente no ficheiro JSON
+                    return finalStopId;
+                }
+                break;
+            }
+        } catch (err) {
+            // Se falhar e ainda houver tentativas, espera um tempo incremental
+            if (i === retries) {
+                console.error(`Erro ao pattern ${patternId} após ${retries} tentativas:`, err.message);
+                // Se a API falhar mas existir um valor antigo (mesmo expirado), usa-se para retornar uma resposta.
+                return cached ? cached.stopId : null;
+            }
+            // Espera de 500ms na 1ª falha, 1000ms na 2ª, 1500ms na 3ª, etc.
+            await sleep(500 * (i + 1));
         }
-    } catch (err) {
-        console.error(`Erro ao processar pattern ${patternId}:`, err);
     }
     return null;
 }
@@ -140,7 +196,11 @@ async function fetchSingleStopData(currentStopId) {
         const allStopPatterns = await getpatternIdsForStop(currentStopId); // Patterns que passam nesta paragem
         
         // Resolve em paralelo os IDs das paragens finais de todos os patterns desta paragem
-        const finalStopResults = await Promise.all(allStopPatterns.map(pid => getFinalStopId(pid)));
+        const finalStopResults = [];
+        for (const pid of allStopPatterns) {
+            const res = await getFinalStopId(pid);
+            finalStopResults.push(res);
+        }
 
         const finalStopMap = {};
         allStopPatterns.forEach((pid, index) => {
@@ -211,6 +271,7 @@ app.listen(PORT, () => {
     console.log(`Servidor ativo em http://localhost:${PORT}`);
     
     // EXECUÇÃO NO ARRANQUE: Carrega as caches assim que o servidor liga
+    loadPatternCache();
     loadStopNames()
         .then(() => updateVehicleCache()) // Depois das paragens, carrega os veículos
         .then(() => {
