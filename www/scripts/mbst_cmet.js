@@ -214,7 +214,7 @@ function generateTableHtml(arrivals, mode) {
                 <th>Destino</th>
                 ${mode === 'master' ? '<th>Paragem</th>' : ''}
                 <th>Faltam</th>
-                <th>Chegada</th>
+                <th>Partida</th>
                 <th class="col-details">Veículo</th>
                 <th class="col-details">Modelo</th>
                 <th class="col-details">Capacidade</th>

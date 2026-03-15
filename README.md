@@ -89,7 +89,7 @@ Pronto, a aplicação estará pronta a ser usada.
     ![alt text](www/images/tabela_individual_detalhes.png)
     **Figura 4.2:** Exemplo de uma tabela individual com os detalhes adicionais
 
-    As informações na tabela são diretas: Mostra a paragem pesquisada, as linhas que servem essa paragem com os seus destinos, quando tempo faltará até o autocarro chegar na hora de chegada prevista e o veículo (identificação, modelo e capacidade) que faz esse horário, ordenados respetivamente. A única exceção é o estado, mas também é simples de entender.
+    As informações na tabela são diretas: Mostra a paragem pesquisada, as linhas que servem essa paragem com os seus destinos, quando tempo faltará até o autocarro chegar na hora de partida prevista e o veículo (identificação, modelo e capacidade) que faz esse horário, ordenados respetivamente. A única exceção é o estado, mas também é simples de entender.
 
     Como a Carris Metropolitana usa tempo real nos seus autocarros, isso torna mais preciso detectar quando um autocarro chega a uma paragem, permitindo ao utilizador antecipar com antecedência se um autocarro está adiantado, pontual ou atrasado.
 
@@ -220,7 +220,7 @@ That's it, the application is ready to use.
     ![alt text](www/images/tabela_individual_detalhes.png)
     **Figure 4.2:** Example of an individual table with the additional details
 
-    The information in the table is straightforward: it shows the stop searched for, the routes that serve that stop with their destinations, how long it will take for the bus to arrive at the scheduled arrival time, and the vehicle (identification, model, and capacity) that runs that route, sorted respectively. The only exception is the type of timetable, but it is also simple to understand.
+    The information in the table is straightforward: it shows the stop searched for, the routes that serve that stop with their destinations, how long it will take for the bus to arrive at the scheduled departure time, and the vehicle (identification, model, and capacity) that runs that route, sorted respectively. The only exception is the type of timetable, but it is also simple to understand.
 
     Because Carris Metropolitana uses real time on its buses, this makes more accurate to detect when a bus arrives at a stop, allowing the user to anticipate in advance if a bus is early, on time or late.
 
