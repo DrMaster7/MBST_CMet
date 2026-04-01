@@ -1,9 +1,6 @@
 // Programação no lado do servidor (backend), incluindo a recepção e o processamento de dados da API Carris Metropolitana.
 // Server-side (backend) programming, including receiving and processing data from the Carris Metropolitana API.
 
-// Carrega as variáveis de ambiente do ficheiro .env para o objeto process.env do Node.js
-require('dotenv').config();
-
 // Importação das bibliotecas necessárias
 const express = require('express');  // Framework web para criação do servidor e das rotas
 const helmet = require('helmet');    // Middleware de segurança para configurar os headers HTTP
@@ -13,19 +10,21 @@ const app = express();               // Inicialização da aplicação Express
 const fs = require('fs');            // Sistema de ficheiros nativos do Node.js
 
 // Definição dos endpoints (maioria sendo da API da Carris Metropolitana (CM))
-const CMET_API_BASE = process.env.CMET_API_BASE || 'https://api.carrismetropolitana.pt/'; // Base URL
-const CMET_ARRIVALS_API = 'v2/arrivals/by_stop/' // Endpoint para chegadas em tempo real
-const CMET_STOPS_API = 'v2/stops';               // Endpoint para lista de paragens e metadados
-const CMET_PATTERNS_API = 'patterns/';           // Endpoint para detalhes de percursos (patterns)
-const CMET_VEHICLES = 'v2/vehicles';             // Endpoint para estado atual da frota
-const PORT = process.env.PORT || 8081;           // Porta onde o servidor vai correr
-const PATTERN_CACHE_FILE = path.join(__dirname, '.vscode/pattern_cache.json'); // Caminho para o ficheiro JSON (BD local)
+const CMET_API_BASE = 'https://api.carrismetropolitana.pt/';    // URL base
+const CMET_ARRIVALS_API = 'v2/arrivals/by_stop/'                // Endpoint para chegadas em tempo real
+const CMET_STOPS_API = 'v2/stops';                              // Endpoint para lista de paragens e metadados
+const CMET_PATTERNS_API = 'patterns/';                          // Endpoint para detalhes de percursos (patterns)
+const CMET_VEHICLES = 'v2/vehicles';                            // Endpoint para estado atual da frota
+const PORT = 8081;                                              // Porta onde o servidor vai correr
+if (!fs.existsSync('data')) fs.mkdirSync('data');
+const PATTERN_CACHE_FILE = path.join(__dirname, 'data/pattern_cache.json'); // Caminho para o ficheiro JSON (BD local)
 
 // Middlewares
 app.use(express.static(path.join(__dirname, 'www'))); // Serve ficheiros HTML/JS/CSS da pasta 'www'
 app.use(express.json()); // Permite que o servidor entenda corpos de pedidos no formato JSON
 
-// Configuração de segurança HSTS via Helmet (força HTTPS durante 90 dias)
+// Configuração do padrão Helmet (incluindo o HSTS que a usar o HTTPS durante 90 dias)
+app.use(helmet());
 app.use(helmet.hsts({maxAge: 90 * 24 * 60 * 60, force: true, includeSubDomains: true}));
 
 // Caches globais para evitar pedidos redundantes à API externa e acelerar a resposta
@@ -52,11 +51,15 @@ function savePatternCache() {
 function loadPatternCache() {
     try {
         if (fs.existsSync(PATTERN_CACHE_FILE)) { // Se o ficheiro existir.
+            const parsed = JSON.parse(fs.readFileSync(PATTERN_CACHE_FILE, 'utf8'))
+
+            if (typeof parsed === 'object' && parsed !== null) {
+                patternStopFinalCache = Object.fromEntries(
+                    Object.entries(parsed).filter(([k, v]) => 
+                    typeof k === 'string' && v.lastUpdated && (Date.now() - v.lastUpdated) < 24 * 60 * 60 * 1000)
+                );
+            }
             // Filtra os registos dentro das últimas 24 horas pedidos, eliminando os restantes.
-            patternStopFinalCache = Object.fromEntries(
-                Object.entries(JSON.parse(fs.readFileSync(PATTERN_CACHE_FILE, 'utf8'))).filter(([_, v]) => 
-                (Date.now() - v.lastUpdated) < 24 * 60 * 60 * 1000)
-            );
             console.log(`Cache carregada: ${Object.keys(patternStopFinalCache).length} percursos.`);
             savePatternCache();
         }
@@ -137,7 +140,7 @@ async function getFinalStopId(patternId, currentStopId, retries = 2) {
     // Ciclo de tentativas para lidar com instabilidade da API (ex: ETIMEDOUT)
     for (let i = 0; i <= retries; i++) {
         try {
-            const response = await fetch(`${CMET_API_BASE}${CMET_PATTERNS_API}${patternId}`, { timeout: 10000 });
+            const response = await fetch(`${CMET_API_BASE}${CMET_PATTERNS_API}${encodeURIComponent(patternId)}`, { timeout: 10000 });
             
             if (!response.ok) {
                 if (response.status === 404) return null; // Pattern inexistente (não precisa de ciclo)
@@ -235,8 +238,8 @@ app.post('/api/arrivals', async (req, res) => {
     if (!stopCacheLoaded) await loadStopNames(); // Segurança: Garante cache carregada
     
     const { stopIds } = req.body; // IDs enviados pelo utilizador
-    if (!Array.isArray(stopIds) || stopIds.length === 0) {
-        return res.status(400).json({ error: 'IDs inválidos.' });
+    if (!Array.isArray(stopIds) || stopIds.length === 0 || stopIds.length > 25) {
+        return res.status(400).json({ error: 'Pedido inválido: IDs inválidos ou demasiados pedidos.' });
     }
 
     const CONCURRENCY_LIMIT = 5;        // Máximo de pedidos simultâneos

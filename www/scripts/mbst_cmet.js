@@ -187,10 +187,10 @@ function renderArrivals(results, container, mode) {
         div.className = 'stop-arrival';
 
         // Gera o cabeçalho do grupo (título e label de erro se necessário)
-        let html = `<h3>${group.title}${group.error && mode === 'individual' ? ' <span class="error-label">ERRO</span>' : ''}</h3>`;
+        let html = `<h3>${escapeHTML(group.title)}${group.error && mode === 'individual' ? ' <span class="error-label">ERRO</span>' : ''}</h3>`;
         
         // Se houver erro no modo individual, mostra a mensagem de erro
-        if (group.error && mode === 'individual') html += `<p class="error-message">${group.error}</p>`;
+        if (group.error && mode === 'individual') html += `<p class="error-message">${escapeHTML(group.error)}</p>`;
         
         // Ordena, remove resultados duplicados e limita os mesmos a 10 resultados (para utilizarem-se na função processArrivals)
         const processed = processArrivals(group.arrivals);
@@ -202,6 +202,13 @@ function renderArrivals(results, container, mode) {
         div.innerHTML = html;
         container.appendChild(div); // Adiciona o bloco ao DOM
     });
+}
+
+// Limpeza do texto recebido para o HTML
+function escapeHTML(str) {
+    const p = document.createElement('p');
+    p.textContent = str;
+    return p.innerHTML;
 }
 
 // Cria a estrutura de tabela HTML para um conjunto de chegadas (o campo "Paragem" apenas existe no modo 'master' da tabela)
@@ -236,15 +243,15 @@ function generateTableHtml(arrivals, mode) {
         // Constrói a linha (row) da tabela com os dados
         html += `
             <tr class="${status.statusClass} ${arrivingClass}">
-                <td>${a.line_id || '----'}</td>
-                <td>${a.headsign || '-'}</td>
-                ${mode === 'master' ? `<td>${a.originStopId}</td>` : ''} 
-                <td>${status.waitTime}</td>
-                <td>${status.arrivalTime}</td>
-                <td class="col-details">${a.vehicle_id?.split('|').at(1) ?? '-'}</td>
-                <td class="col-details">${modelDisplay}</td>
-                <td class="col-details">${a.vehicleDetails?.capacity_total || '-'}</td>
-                <td class="col-details">${status.statusText}</td>
+                <td>${escapeHTML(a.line_id || '----')}</td>
+                <td>${escapeHTML(a.headsign || '-')}</td>
+                ${mode === 'master' ? `<td>${escapeHTML(a.originStopId)}</td>` : ''} 
+                <td>${escapeHTML(status.waitTime)}</td>
+                <td>${escapeHTML(status.arrivalTime)}</td>
+                <td class="col-details">${escapeHTML(a.vehicle_id?.split('|').at(1) ?? '-')}</td>
+                <td class="col-details">${escapeHTML(modelDisplay)}</td>
+                <td class="col-details">${escapeHTML(a.vehicleDetails?.capacity_total || '-')}</td>
+                <td class="col-details">${escapeHTML(status.statusText)}</td>
             </tr>`;
     });
     return html + '</tbody></table>';
@@ -361,7 +368,7 @@ function parseScheduledTime(ts, retStamp = false) {
 function setCookie(n, v, d) {
     const date = new Date();
     date.setTime(date.getTime() + (d * 24 * 60 * 60 * 1000)); // Calcula a data de expiração do cookie
-    document.cookie = `${n}=${v}; expires=${date.toUTCString()}; path=/; SameSite=Lax`;
+    document.cookie = `${n}=${v}; expires=${date.toUTCString()}; path=/; SameSite=Lax; Secure`;
 }
 
 // Obtém o valor de um cookie específico pelo nome
