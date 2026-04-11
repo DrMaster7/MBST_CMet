@@ -13,13 +13,9 @@ const fs = require('fs');            // Sistema de ficheiros nativos do Node.js
 const OPERATORS_CONFIG = {
     'ccfl': {
         name: 'Carris (CCFL)',
-        baseUrl: '',                                    // URL base da Carris
-        endpoints: {
-            arrivals: '',                               // Endpoint para as chegadas (em tempo real)
-            patterns: '',                               // Endpoint para detalhes de percursos (patterns)
-            stops: '',                                  // Endpoint para lista de paragens
-            vehicles: ''                                // Endpoint para a frota
-        }
+        gtfsPath: path.join(__dirname, 'gtfs', 'ccfl'),
+        isStatic: true, // Flag para diferenciar de APIs de tempo real
+        endpoints: {}
     },
     'cmet': { 
         name: 'Carris Metropolitana (CMet)',
@@ -33,33 +29,21 @@ const OPERATORS_CONFIG = {
     },
     'cp': {
         name: 'Comboios de Portugal (CP)',
-        baseUrl: '',                                    // URL base da Comboios de Portugal (CP)
-        endpoints: {
-            arrivals: '',                               // Endpoint para as chegadas (em tempo real)
-            patterns: '',                               // Endpoint para detalhes de percursos (patterns)
-            stops: '',                                  // Endpoint para lista de paragens
-            vehicles: ''                                // Endpoint para a frota
-        }
+        gtfsPath: path.join(__dirname, 'gtfs', 'cp'),
+        isStatic: true,
+        endpoints: {}
     },
     'ft': {
         name: 'Fertagus',
-        baseUrl: '',                                    // URL base da Fertagus
-        endpoints: {
-            arrivals: '',                               // Endpoint para as chegadas (em tempo real)
-            patterns: '',                               // Endpoint para detalhes de percursos (patterns)
-            stops: '',                                  // Endpoint para lista de paragens
-            vehicles: ''                                // Endpoint para a frota
-        }
+        gtfsPath: path.join(__dirname, 'gtfs', 'ft'),
+        isStatic: true,
+        endpoints: {}
     },
     'ml': {
         name: 'Metro de Lisboa (ML)',
-        baseUrl: '',                                    // URL base do Metro de Lisboa
-        endpoints: {
-            arrivals: '',                               // Endpoint para as chegadas (em tempo real)
-            patterns: '',                               // Endpoint para detalhes de percursos (patterns)
-            stops: '',                                  // Endpoint para lista de paragens
-            vehicles: ''                                // Endpoint para a frota
-        }
+        gtfsPath: path.join(__dirname, 'gtfs', 'ml'),
+        isStatic: true,
+        endpoints: {}
     },
     'mst': {
         name: 'Metro Sul do Tejo (MST)',
@@ -73,33 +57,21 @@ const OPERATORS_CONFIG = {
     },
     'mobi': {
         name: 'MobiCascais',
-        baseUrl: '',                                    // URL base da MobiCascais
-        endpoints: {
-            arrivals: '',                               // Endpoint para as chegadas (em tempo real)
-            patterns: '',                               // Endpoint para detalhes de percursos (patterns)
-            stops: '',                                  // Endpoint para lista de paragens
-            vehicles: ''                                // Endpoint para a frota
-        }
+        gtfsPath: path.join(__dirname, 'gtfs', 'mobi'),
+        isStatic: true,
+        endpoints: {}
     },
     'tcb': {
         name: 'Transportes Coletivos do Barreiro (TCB)',
-        baseUrl: '',                                    // URL base dos Transportes Coletivos do Barreiro
-        endpoints: {
-            arrivals: '',                               // Endpoint para as chegadas (em tempo real)
-            patterns: '',                               // Endpoint para detalhes de percursos (patterns)
-            stops: '',                                  // Endpoint para lista de paragens
-            vehicles: ''                                // Endpoint para a frota
-        }
+        gtfsPath: path.join(__dirname, 'gtfs', 'tcb'),
+        isStatic: true,
+        endpoints: {}
     },
     'ttsl': {
         name: 'Transtejo Soflusa (TTSL)',
-        baseUrl: '',                                    // URL base da Transtejo Soflusa
-        endpoints: {
-            arrivals: '',                               // Endpoint para as chegadas (em tempo real)
-            patterns: '',                               // Endpoint para detalhes de percursos (patterns)
-            stops: '',                                  // Endpoint para lista de paragens
-            vehicles: ''                                // Endpoint para a frota
-        }
+        gtfsPath: path.join(__dirname, 'gtfs', 'ttsl'),
+        isStatic: true,
+        endpoints: {}
     }
 };
 
@@ -118,6 +90,7 @@ app.use(helmet.hsts({maxAge: 90 * 24 * 60 * 60, force: true, includeSubDomains: 
 
 // Objeto central de caches
 let caches = {};
+let patternStopFinalCache = {};  // Guarda { patternId: "ultimoStopId" }
 
 // Inicializa a estrutura de cache para cada operador definido no CONFIG
 Object.keys(OPERATORS_CONFIG).forEach(op => {
@@ -130,7 +103,71 @@ Object.keys(OPERATORS_CONFIG).forEach(op => {
 });
 
 // A cache de patterns (destino final) separada por IDs únicos.
-let patternStopFinalCache = {};  // Guarda { patternId: "ultimoStopId" }
+// Cache para dados estáticos do GTFS
+let staticDataCache = {
+    ccfl: { routes: [], stops: {}, stopTimes: [], trips: [] },
+    cp: { routes: [], stops: {}, stopTimes: [], trips: [] },
+    ft: { routes: [], stops: {}, stopTimes: [], trips: [], vehicles: [] },
+    ml: { routes: [], stops: {}, stopTimes: [], trips: [] },
+    mobi: { routes: [], stops: {}, stopTimes: [], trips: [], vehicles: [] },
+    tcb: { routes: [], stops: {}, stopTimes: [], trips: [] },
+    ttsl: { routes: [], stops: {}, stopTimes: [], trips: [] }
+};
+
+const parseCSV = (filePath) => {
+    if (!fs.existsSync(filePath)) return [];
+    const content = fs.readFileSync(filePath, 'utf8');
+    const lines = content.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    
+    return lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+        return headers.reduce((obj, header, i) => {
+            obj[header] = values[i];
+            return obj;
+        }, {});
+    });
+};
+
+// Carrega GTFS para memória no arranque
+function loadStaticGTFS(opKey) {
+    if (!opKey || !OPERATORS_CONFIG[opKey]) return;
+    const config = OPERATORS_CONFIG[opKey];
+    if (!config.isStatic) return;
+
+    try {
+        console.log(`A carregar GTFS para ${opKey}...`);
+        
+        // Carrega e indexa paragens
+        const stopsArr = parseCSV(path.join(config.gtfsPath, 'stops.txt'));
+        staticDataCache[opKey].stops = {};
+        stopsArr.forEach(s => { staticDataCache[opKey].stops[s.stop_id] = s.stop_name; });
+
+        // Indexa Routes por ID
+        const routesArr = parseCSV(path.join(config.gtfsPath, 'routes.txt'));
+        staticDataCache[opKey].routes = {};
+        routesArr.forEach(r => { staticDataCache[opKey].routes[r.route_id] = r; });
+
+        // Indexa Trips por ID
+        const tripsArr = parseCSV(path.join(config.gtfsPath, 'trips.txt'));
+        staticDataCache[opKey].trips = {};
+        tripsArr.forEach(t => { staticDataCache[opKey].trips[t.trip_id] = t; });
+
+        // Agrupa Stop Times por Stop ID
+        const allStopTimes = parseCSV(path.join(config.gtfsPath, 'stop_times.txt'));
+        staticDataCache[opKey].stopTimesByStop = {};
+        allStopTimes.forEach(st => {
+            if (!staticDataCache[opKey].stopTimesByStop[st.stop_id]) {
+                staticDataCache[opKey].stopTimesByStop[st.stop_id] = [];
+            }
+            staticDataCache[opKey].stopTimesByStop[st.stop_id].push(st);
+        });
+
+        console.log(`GTFS ${opKey} indexado com sucesso.`);
+    } catch (err) {
+        console.error(`Erro ao carregar ficheiros GTFS de ${opKey}:`, err.message);
+    }
+}
 
 /**
  * Uniformizar a linguagem a ser falada por cada serviço, seguindo o formato da Carris Metropolitana
@@ -142,25 +179,15 @@ function normalizeArrivalData(operatorKey, rawData) {
     // Seguir formato da Carris Metropolitana por ser o original e mais completo
     if (operatorKey === 'cmet') return rawData;
     
-    if (operatorKey === 'tcb') {
-        if (dataType === 'stops') {
-            return rawData.map(item => ({
-                id: item.id,
-                long_name: item.stop_name,
-                operational_status: 'active',
-                pattern_ids: []
-            }));
-        }
-
-        if (dataType === 'vehicles') {
-            return rawData.map(item => ({
-                id: item.id,
-                capacity_total: null,
-                make: null,
-                model: null
-            }));
-        }
+    /*
+    if (operatorKey === 'carris') {
+        return rawData.map(item => ({
+            stop_id: item.id_paragem,
+            estimated_arrival: item.schedule,
+            ...
+        }));
     }
+    */
 }
 
 /**
@@ -240,27 +267,35 @@ async function loadStopNames(operatorKey) {
     console.log('A carregar nomes de paragens da API...');
     try {
         const config = OPERATORS_CONFIG[operatorKey];
-        if (!config|| !config.baseUrl) return { error: 'Operador desconhecido' };
+        if (!config || !config.baseUrl) return;
 
-        const response = await fetch(`${config.baseUrl}${config.endpoints.stops}`, { timeout: 10000 });
-        if (response.ok) {
-            const rawData = await response.json();
-            const data = normalizeArrivalData(operatorKey, 'stops', rawData);
-
-            // Itera sobre todas as paragens para popular as caches de nomes e patterns
-            data.forEach(stop => {
-                // Se o status for 'voided', marca como desativada
-                opCache.stopNames[stop.id] = stop.operational_status === 'voided' ? 'Paragem Desativada' : stop.long_name;
-                // Se a paragem tiver patterns associados, guarda para lógica de filtragem posterior
-                if (stop.pattern_ids && stop.pattern_ids.length > 0) {
-                    opCache.stopPatterns[stop.id] = stop.pattern_ids.map(String);
-                }
-            });
-            opCache.isLoaded = true; 
-            console.log(`Cache [${operatorKey}] carregada: ${Object.keys(opCache.stopNames).length} paragens.`);
+        const response = await fetch(`${config.baseUrl}${config.endpoints.stops}`, { timeout: 30000 });
+        
+        if (!response.ok) {
+            console.error(`[${operatorKey}] Erro API: ${response.status}`);
+            return;
         }
+
+        const data = await response.json();
+        console.log(`[${operatorKey}] A processar ${data.length} paragens...`);
+
+        for (let i = 0; i < data.length; i++) {
+            const stop = data[i];
+            const sid = String(stop.id);
+            // Se o status for 'voided', marca como desativada
+            opCache.stopNames[stop.id] = stop.operational_status === 'voided' ? 'Paragem Desativada' : stop.long_name;
+            // Se a paragem tiver patterns associados, guarda para lógica de filtragem posterior
+            if (stop.pattern_ids?.length > 0) {
+                opCache.stopPatterns[sid] = stop.pattern_ids.map(String);
+            }
+
+            if (i % 500 === 0) await new Promise(resolve => setImmediate(resolve));
+        }
+
+        opCache.isLoaded = true;
+        console.log(`[${operatorKey}] Cache carregada com sucesso.`);
     } catch (error) {
-        console.error(`Erro ao carregar paragens de ${operatorKey}:`, error.message);
+        console.error(`[${operatorKey}] Falha no carregamento:`, error.message);
     }
 }
 
@@ -272,59 +307,43 @@ async function loadStopNames(operatorKey) {
  * @param {*} retries 
  * @returns 
  */
-async function getFinalStopId(operatorKey, patternId, currentStopId, retries = 2) {
+async function getFinalStopId(operatorKey, patternId, currentStopId, retries = 1) {
     if (!patternId) return null;
 
-    const cached = patternStopFinalCache[patternId];
-    
     // Verifica a cache da memória, retornando-a se existir e for mais recente que 24 horas
+    const cached = patternStopFinalCache[patternId];
     if (cached && (Date.now() - cached.lastUpdated < 24 * 60 * 60 * 1000)) {
-        if (cached.stopId === String(currentStopId)) return null;
-        return cached.stopId;
+        return cached.stopId === String(currentStopId) ? null : cached.stopId;
     }
+
+    const config = OPERATORS_CONFIG[operatorKey];
 
     // Ciclo de tentativas para lidar com instabilidade da API (ex: ETIMEDOUT)
     for (let i = 0; i <= retries; i++) {
         try {
-            const config = OPERATORS_CONFIG[operatorKey];
-            if (!config) return { error: 'Operador desconhecido' };
+            // AbortController impede que o fetch fique "eternamente" à espera
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 2000);
 
-            const response = await fetch(`${config.baseUrl}${config.endpoints.patterns}${encodeURIComponent(patternId)}`, { timeout: 10000 });
+            const response = await fetch(`${config.baseUrl}${config.endpoints.patterns}${patternId}`, { 
+                signal: controller.signal 
+            });
+            clearTimeout(timeout);
             
-            if (!response.ok) {
-                if (response.status === 404) return null; // Pattern inexistente (não precisa de ciclo)
-                throw new Error(`Status ${response.status}`);
-            }
+            if (!response.ok) continue;
 
             const patternData = await response.json();
-            const patternPath = patternData.path;
-        
-            if (Array.isArray(patternPath) && patternPath.length > 0) {
-                // Obtém a última paragem da lista
-                const finalStopContainer = patternPath[patternPath.length - 1]; 
-                const finalStopId = String(finalStopContainer.stop?.id || finalStopContainer.stop?.stop_id || null);
-                if (finalStopId && finalStopId !== 'null') { 
-                    if (finalStopId === String(currentStopId)) { // Se a paragem pesquisada é o destino, descarta na cache
-                        return null;
-                    } else { // Guarda a cache para uso futuro pelas próximas 24 horas
-                        patternStopFinalCache[patternId] = { 
-                            stopId: finalStopId,
-                            lastUpdated: Date.now()
-                        };
-                        savePatternCache(); // Sincroniza a memória guardando na cache
-                        return finalStopId;
-                    }
-                }
-                break;
+            const lastStop = patternData.path?.[patternData.path.length - 1];
+            const finalStopId = String(lastStop?.stop?.id || lastStop?.stop?.stop_id || "");
+
+            if (finalStopId) {
+                patternStopFinalCache[patternId] = { stopId: finalStopId, lastUpdated: Date.now() };
+                savePatternCache();
+                return finalStopId === String(currentStopId) ? null : finalStopId;
             }
         } catch (err) {
-            if (i === retries) { // Se falhar e ainda houver tentativas, espera um tempo incremental
-                console.error(`Erro ao pattern ${patternId} após ${retries} tentativas:`, err.message);
-                // Se a API falhar mas existir um valor antigo (mesmo expirado), usa-se para retornar uma resposta.
-                return cached ? cached.stopId : null;
-            }
-            // Espera de 500ms na 1ª falha, 1000ms na 2ª, 1500ms na 3ª, etc.
-            await sleep(500 * (i + 1));
+            if (i === retries) return null;
+            await sleep(300);
         }
     }
     return null;
@@ -362,11 +381,9 @@ async function fetchSingleStopData(operatorKey, currentStopId) {
         const allStopPatterns = await getpatternIdsForStop(operatorKey, currentStopId); // Patterns que passam nesta paragem
         
         // Resolve em paralelo os IDs das paragens finais de todos os patterns desta paragem
-        const finalStopResults = [];
-        for (const pid of allStopPatterns) {
-            const res = await getFinalStopId(operatorKey, pid, currentStopId);
-            finalStopResults.push(res);
-        }
+        const finalStopResults = await Promise.all(
+            allStopPatterns.map(pid => getFinalStopId(operatorKey, pid, currentStopId))
+        );
 
         const finalStopMap = {};
         allStopPatterns.forEach((pid, index) => {
@@ -392,69 +409,79 @@ async function fetchSingleStopData(operatorKey, currentStopId) {
 app.post('/api/arrivals', async (req, res) => {
     try {
         const { operators, stopIds } = req.body;
-
-        // Validação de segurança básica
         if (!Array.isArray(operators) || !Array.isArray(stopIds)) {
-            return res.status(400).json({ error: 'Pedido inválido: formato de dados incorreto.' });
+            return res.status(400).json({ error: 'Pedido inválido.' });
         }
 
-        if (stopIds.length === 0 || stopIds.length > 25) {
-            return res.status(400).json({ error: 'Pedido inválido: envie entre 1 e 25 IDs.' });
-        }
-
-        const results = [];
-
-        // Processamento por ID de paragem
-        for (const id of stopIds) {
-            let found = false;
-
-            // Tentamos encontrar o ID em cada um dos operadores selecionados pelo utilizador
+        // Processa as paragens em paralelo, mas de forma isolada
+        const results = await Promise.all(stopIds.map(async (id) => {
             for (const opKey of operators) {
-                // Segurança: Ignora se o operador enviado não existir no servidor
-                if (!caches[opKey]) {
-                    console.warn(`Aviso: Operador '${opKey}' não configurado.`);
-                    continue;
-                }
+                const config = OPERATORS_CONFIG[opKey];
+                if (!config) continue;
 
-                // Carrega nomes do operador se ainda não estiverem em memória
-                if (!caches[opKey].isLoaded) {
-                    await loadStopNames(opKey);
-                }
-                
-                // Tenta obter o nome da paragem na cache deste operador
-                const stopName = caches[opKey].stopNames[id];
+                // Dados estáticos (GTFS)
+                if (config.isStatic) {
+                    const opStatic = staticDataCache[opKey];
+                    const stopName = opStatic.stops[id];
 
-                if (stopName) {
-                    // Se encontrou, vai procurar as chegadas reais na API desse operador
-                    const stopData = await fetchSingleStopData(opKey, id);
-                    
-                    results.push({
-                        ...stopData,
-                        operator: opKey,
-                        stopName: stopName
-                    });
-                    
-                    found = true;
-                    break; // Para de procurar nos outros operadores para este ID
+                    if (stopName) {
+                        // Busca instantânea pelo ID da paragem
+                        const stopPassages = opStatic.stopTimesByStop[id] || [];
+                        
+                        const data = stopPassages.slice(0, 50).map(passage => {
+                            const trip = opStatic.trips[passage.trip_id];
+                            const route = trip ? opStatic.routes[trip.route_id] : null;
+                            
+                            let lineId = route?.route_short_name || "Linha";
+                            let headsign = trip?.trip_headsign || route?.route_long_name || "Destino";
+
+                            if (opKey === 'ccfl') {
+                                headsign = headsign.split(' - ').pop().trim();
+                            }
+                            if (opKey === 'cp') {
+                                lineId = lineId.replace(/^Linha d[oae]s?\s+/gi, '').trim();
+                            }
+                            if (opKey === 'tcb') {
+                                headsign = headsign.replace(/^\S+\s+/, '').trim();
+                            }
+
+                            return {
+                                line_id: lineId,
+                                headsign: headsign,
+                                scheduled_arrival: passage.arrival_time,
+                                realtime: false
+                            };
+                        });
+
+                        return { stopId: id, stopName: stopName, operator: opKey, data: data };
+                    }
+                } 
+                // Dados em tempo real
+                else {
+                    if (!caches[opKey].isLoaded) await loadStopNames(opKey);
+                    const stopName = caches[opKey].stopNames[id];
+
+                    if (stopName) {
+                        const stopData = await fetchSingleStopData(opKey, id);
+                        if (stopData.error) return stopData;
+
+                        // Anexar detalhes dos veículos guardados na cache
+                        const dataWithDetails = (stopData.data || []).map(arrival => ({
+                            ...arrival,
+                            vehicleDetails: caches[opKey].vehicles[arrival.vehicle_id] || null
+                        }));
+
+                        return { ...stopData, data: dataWithDetails, operator: opKey, stopName: stopName };
+                    }
                 }
             }
-
-            // Se o ID não foi encontrado em nenhum operador ativo
-            if (!found) {
-                results.push({ 
-                    stopId: id, 
-                    stopName: "Paragem Inexistente", 
-                    error: "404 Not Found",
-                    data: [] 
-                });
-            }
-        }
+            return { stopId: id, stopName: "Não Encontrado", error: "404", data: [] };
+        }));
 
         res.json(results);
-
     } catch (error) {
-        console.error('Erro crítico no processamento:', error);
-        res.status(500).json({ error: 'Erro interno ao processar múltiplos operadores.' });
+        console.error('Erro crítico na rota:', error);
+        if (!res.headersSent) res.status(500).json({ error: 'Erro interno.' });
     }
 });
 
@@ -464,17 +491,23 @@ app.get('/', (_, res) => {
 });
 
 // Inicialização do Servidor
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
     console.log(`Servidor ativo em http://localhost:${PORT}`);
     
     // Carrega as caches assim que o servidor liga
     loadPatternCache();
-    Object.keys(OPERATORS_CONFIG).forEach(op => {
+
+    // Carrega GTFS estáticos primeiro
+    for (const op in OPERATORS_CONFIG) {
+        if (OPERATORS_CONFIG[op].isStatic) loadStaticGTFS(op);
+    }
+
+    // Carrega as APIs uma de cada vez
+    for (const op in OPERATORS_CONFIG) {
         if (OPERATORS_CONFIG[op].baseUrl) {
-            loadStopNames(op).then(() => {
-                updateVehicleCache(op);
-                setInterval(() => updateVehicleCache(op), 60000);
-            });
+            await loadStopNames(op); // Espera um terminar antes de começar outro
+            updateVehicleCache(op);
+            setInterval(() => updateVehicleCache(op), 60000);
         }
-    });
+    }
 });
