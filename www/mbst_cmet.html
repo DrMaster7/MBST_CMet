@@ -2,45 +2,82 @@
 <html lang="pt">
 <head>
     <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MBST | Carris Metropolitana (App Não-Oficial)</title>
+    <title> Multiple Transport Stop Tracker </title>
     <link href='https://fonts.googleapis.com/css?family=Lexend' rel='stylesheet'>
     <link rel="stylesheet" href="styles/mbst_cmet.css">
 </head>
 <body>
     <header>
-        <h1>⏰ Multiple Bus Stop Tracker (Carris Metropolitana - App Não-Oficial) ⏰</h1>
+        <h1> ⏰ Multiple Transport Stop Tracker (Área Metropolitana de Lisboa) ⏰ </h1>
+        <br>
+        <button class="operator" data-op="ccfl">
+            <img src="images/operadores/ccfl.png" width="100px" alt="Carris">
+        </button>
+
+        <button class="operator active" data-op="cmet">
+            <img src="images/operadores/cmet.png" width="100px" alt="Carris Metropolitana">
+        </button>
+
+        <button class="operator" data-op="cp">
+            <img src="images/operadores/cp.png" width="100px" alt="Comboios de Portugal (CP)">
+        </button>
+
+        <button class="operator" data-op="ft">
+            <img src="images/operadores/ft.png" width="100px" alt="Fertagus">
+        </button>
+
+        <button class="operator" data-op="ml">
+            <img src="images/operadores/ml.png" width="100px" alt="Metro de Lisboa">
+        </button>
+
+        <button class="operator" data-op="mst">
+            <img src="images/operadores/mst.png" width="100px" alt="Metro Sul do Tejo">
+        </button>
+
+        <button class="operator" data-op="mobi">
+            <img src="images/operadores/mobi.png" width="100px" alt="MobiCascais">
+        </button>
+
+        <button class="operator" data-op="tcb">
+            <img src="images/operadores/tcb.png" width="100px" alt="TCB">
+        </button>
+
+        <button class="operator" data-op="ttsl">
+                <img src="images/operadores/ttsl.png" width="100px" alt="Transtejo Soflusa">
+        </button>
     </header>
-    
+
     <main class="hide-details">
         <section class="input-section">
-            <h2>Escolha as suas paragens</h2>
-            <p>Introduza os <a onclick="showID()">IDs</a> das paragens (separadas por vírgulas) para visualizar os horários das paragens.</p>
+            <h2> Escolha as suas paragens: </h2>
+            <p> Introduza os <a href="#" id="link-show-id">IDs</a> das paragens (separadas por vírgulas) para visualizar os horários das paragens. </p>
+            <p> NOTA: Atualmente só a Carris Metropolitana (2º bloco) funciona. Correções com os outros serviços em breve. </p>
 
             <form id="stops-form">
                 <textarea id="stop-ids" rows="3" placeholder="020001, 020003" aria-label="IDs das paragens separados por vírgula"></textarea>
                 
                 <div class="button-group">
                     <button type="submit" id="search-button">
-                        <span id="button-text">Consultar Tempos</span>
-                        <span id="loading-spinner" style="display:none;">A carregar...</span>
+                        <span id="button-text"> Consultar Tempos </span>
+                        <span id="loading-spinner" style="display:none;"> A carregar... </span>
                     </button>
                     
-                    <button type="button" id="toggle-view-button" style="display:none;">Ver Tabela Mestre</button>
-                    <button type="button" id="details-button" style="display:none;">Mostrar Detalhes</button>
+                    <button type="button" id="toggle-view-button" style="display:none;"> Ver Tabela Mestre </button>
+                    <button type="button" id="details-button" style="display:none;"> Mostrar Detalhes </button>
                 </div>
             </form>
         </section>
 
         <section class="results-section">
-            <h2>Resultados</h2>
+            <h2> Resultados </h2>
             <div id="results-container">
             </div>
         </section>
     </main>
 
     <footer>
-        <p>Dados fornecidos pela API da Carris Metropolitana. Os dados são automaticamente atualizados aproximadamente a cada 10 segundos.</p>
-        <p>Feito por: DrMaster7</p>
+        <p> Dados fornecidos pela API da Carris Metropolitana. Os dados são automaticamente atualizados aproximadamente a cada 10 segundos. </p>
+        <p> Feito por: <a href="https://github.com/DrMaster7"> DrMaster7 </a></p>
     </footer>
 
     <script src="scripts/mbst_cmet.js"></script>

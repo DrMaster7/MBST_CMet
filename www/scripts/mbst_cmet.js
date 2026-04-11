@@ -2,19 +2,20 @@
 // Client-side programming (frontend), including automating and processing data received from server.js.
 
 // --- Variáveis Globais ---
-let refreshTimer = null;            // Timer do setInterval
-let lastSearchStopIds = null;       // Últimos IDs pesquisados para atualizações automáticas
-let lastSuccessfulData = null;      // Últimos dados da API guardados com sucesso
-let currentViewMode = 'individual'; // Modo de exibição da tabela ('individual' ou 'master')
-let showDetails = false;            // Estado de visibilidade das colunas com detalhes técnicos
+let selectedOperators = new Set(['cmet']);  // Operador selecionado (Carris Metropolitana por defeito)
+let refreshTimer = null;                    // Timer do setInterval
+let lastSearchStopIds = null;               // Últimos IDs pesquisados para atualizações automáticas
+let lastSuccessfulData = null;              // Últimos dados da API guardados com sucesso
+let currentViewMode = 'individual';         // Modo de exibição da tabela ('individual' ou 'master')
+let showDetails = false;                    // Estado de visibilidade das colunas com detalhes técnicos
 
 // --- Constantes de Configuração (CONFIG) ---
 const CONFIG = {
-    REFRESH_INTERVAL: 10000,        // Tempo de atualização automática (10 segundos)
-    COOKIE_NAME: 'cmet_search',     // Nome do cookie (cmet_search)
-    COOKIE_DAYS: 365,               // Tempo de vida do cookie (1 ano)
-    ENCRYPTION_KEY: 'cmet_key',     // Nome da chave de encriptação do cookie
-    API_ENDPOINT: '/api/arrivals'   // Valores recebidos das chegadas da API
+    REFRESH_INTERVAL: 10000,                // Tempo de atualização automática (10 segundos)
+    COOKIE_NAME: 'transport_search',        // Nome do cookie (transport_search)
+    COOKIE_DAYS: 365,                       // Tempo de vida do cookie (1 ano)
+    ENCRYPTION_KEY: 'transport_key',        // Nome da chave de encriptação do cookie
+    API_ENDPOINT: '/api/arrivals'           // Valores recebidos das chegadas da API
 };    
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -24,7 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsContainer = document.getElementById('results-container');  // Contentor dos resultados.
     const toggleViewButton = document.getElementById('toggle-view-button'); // Botão de exibição da tabela ('individual' ou 'master').
     const detailsButton = document.getElementById('details-button');        // Botão das colunas com detalhes técnicos.
-    const mainElement = document.querySelector('main');                     // Elemento para as classes CSS.
+    const mainElement = document.querySelector('main');      
+    const operatorButtons = document.querySelectorAll('.operator');               // Elemento para as classes CSS.
 
     // Inicialização do texto dos botões na interface
     toggleViewButton.textContent = 'Ver Tabela Mestre';
@@ -33,19 +35,38 @@ document.addEventListener('DOMContentLoaded', () => {
     // Gestão de Cookies e Carregamento Automático
     const encryptedCookie = getCookie(CONFIG.COOKIE_NAME); // Tenta ler o cookie guardado
 
+    // Ouvinte para o ID
+    const linkShowId = document.getElementById('link-show-id');
+    if (linkShowId) {
+        linkShowId.addEventListener('click', (e) => {
+            e.preventDefault(); // Impede que a página salte para o topo
+            alert('ID é a identidade de uma paragem (ex: 020001). No site da Carris Metropolitana, está localizada na parte superior da página da paragem, acima do nome. No terreno, está localizada na parte inferior do semi-círculo amarelo dos postaletes. Para mais informações consulte o README, localizado na pasta e no GitHub da aplicação.');
+        });
+    }
+
     // Se o cookie estiver encriptado.
     if (encryptedCookie) {
-        const decryptedValue = decryptData(encryptedCookie); // Desencripta o valor do cookie
-        // Se o valor do cookie estiver desencriptado.
-        if (decryptedValue) {
-            stopIdsTextarea.value = decryptedValue; // Preenche o campo de texto com as paragens
-            // Converte a string do cookie num array limpo de IDs
-            const initialStopIds = decryptedValue.split(',').map(id => id.trim()).filter(id => id.length > 0);
-            //Se a string do cookie não estiver vazia
-            if (initialStopIds.length > 0) {
-                setCookie(CONFIG.COOKIE_NAME, encryptData(decryptedValue), CONFIG.COOKIE_DAYS); // Renova a validade do cookie
-                fetchAndRenderArrivals(initialStopIds, true); // Executa a primeira pesquisa automática
+        const decryptedValue = decryptData(encryptedCookie); // Desencripta os valores do cookie
+        // Se os valores do cookie estiverem desencriptados.
+        try {
+            const savedState = JSON.parse(decryptedValue);
+
+            if (savedState && savedState.ops && savedState.ids) {
+                // Restaurar Operadores
+                selectedOperators = new Set(savedState.ops);
+                operatorButtons.forEach(button => {
+                    const op = button.getAttribute('data-op');
+                    button.classList.toggle('active', selectedOperators.has(op));
+                });
+
+                // Restaurar IDs no TextArea
+                stopIdsTextarea.value = savedState.ids.join(', ');
+
+                // Executar pesquisa automática
+                fetchAndRenderArrivals(savedState.ids, true);
             }
+        } catch (e) {
+            console.error("Erro ao carregar cookie de pesquisa:", e);
         }
     }
 
@@ -77,9 +98,31 @@ document.addEventListener('DOMContentLoaded', () => {
         // Cria array de IDs únicos, removendo espaços e IDs vazios
         let stopIds = [...new Set(inputRaw.split(',').map(id => id.trim()).filter(id => id.length > 0))];
         if (stopIds.length === 0) return alert("IDs inválidos.");
+        const searchState = {
+            ops: Array.from(selectedOperators),
+            ids: stopIds
+        };
 
-        setCookie(CONFIG.COOKIE_NAME, encryptData(stopIds.join(', ')), CONFIG.COOKIE_DAYS); // Guarda a pesquisa encriptada
+        setCookie(CONFIG.COOKIE_NAME, encryptData(JSON.stringify(searchState)), CONFIG.COOKIE_DAYS); // Guarda a pesquisa encriptada
         await fetchAndRenderArrivals(stopIds, true); // Chama a função de busca
+    });
+
+    operatorButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const op = this.getAttribute('data-op');
+            
+            if (this.classList.contains('active')) {
+                if (selectedOperators.size > 1) {
+                    this.classList.remove('active');
+                    selectedOperators.delete(op);
+                } else {
+                    alert("Tem de ter pelo menos um operador selecionado.");
+                }
+            } else {
+                this.classList.add('active');
+                selectedOperators.add(op);
+            }
+        });
     });
 });
 
@@ -110,8 +153,16 @@ async function fetchAndRenderArrivals(stopIds, isManualSearch = false) {
         const response = await fetch(CONFIG.API_ENDPOINT, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ stopIds })
+            body: JSON.stringify({ 
+                operators: Array.from(selectedOperators), 
+                stopIds: stopIds 
+            })
         });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Erro ${response.status}`);
+        }
 
         const data = await response.json(); // Converte a resposta para JSON
 
@@ -189,8 +240,11 @@ function renderArrivals(results, container, mode) {
         // Gera o cabeçalho do grupo (título e label de erro se necessário)
         let html = `<h3>${escapeHTML(group.title)}${group.error && mode === 'individual' ? ' <span class="error-label">ERRO</span>' : ''}</h3>`;
         
-        // Se houver erro no modo individual, mostra a mensagem de erro
-        if (group.error && mode === 'individual') html += `<p class="error-message">${escapeHTML(group.error)}</p>`;
+        // Se houver erro, mostra a mensagem de erro (404)
+        if (group.error) {
+            const errorText = group.error.includes("404") ? "ID não encontrado" : group.error;
+            html += `<p class="error-message">Erro: ${escapeHTML(errorText)}</p>`;
+        }
         
         // Ordena, remove resultados duplicados e limita os mesmos a 10 resultados (para utilizarem-se na função processArrivals)
         const processed = processArrivals(group.arrivals);
@@ -343,11 +397,6 @@ function isFutureArrival(a) {
 // Função de comparação para o método .sort() do JavaScript
 function compareArrivals(a, b) {
     return a._ts - b._ts; // Retorna a diferença para ordenar do menor para o maior
-}
-
-// Alerta simples para indicar o que é o ID
-function showID() {
-    alert('ID é a identidade de uma paragem (ex: 020001). No site da Carris Metropolitana, está localizada na parte superior da página da paragem, acima do nome. No terreno, está localizada na parte inferior do semi-círculo amarelo dos postaletes. Para mais informações consulte o README, localizado na pasta e no GitHub da aplicação.');
 }
 
 // Converte strings de tempo "HH:MM:SS" em milissegundos Unix, tratando viradas do dia à meia-noite
