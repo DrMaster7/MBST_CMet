@@ -133,7 +133,7 @@ Object.keys(OPERATORS_CONFIG).forEach(op => {
 let patternStopFinalCache = {};  // Guarda { patternId: "ultimoStopId" }
 
 /**
- * Uniformizar a linguagem a ser falada por cada operadora
+ * Uniformizar a linguagem a ser falada por cada serviço, seguindo o formato da Carris Metropolitana
  * @param {*} operatorKey 
  * @param {*} rawData 
  * @returns 
@@ -142,15 +142,25 @@ function normalizeArrivalData(operatorKey, rawData) {
     // Seguir formato da Carris Metropolitana por ser o original e mais completo
     if (operatorKey === 'cmet') return rawData;
     
-    /*
-    if (operatorKey === 'carris') {
-        return rawData.map(item => ({
-            stop_id: item.id_paragem,
-            estimated_arrival: item.schedule,
-            ...
-        }));
+    if (operatorKey === 'tcb') {
+        if (dataType === 'stops') {
+            return rawData.map(item => ({
+                id: item.id,
+                long_name: item.stop_name,
+                operational_status: 'active',
+                pattern_ids: []
+            }));
+        }
+
+        if (dataType === 'vehicles') {
+            return rawData.map(item => ({
+                id: item.id,
+                capacity_total: null,
+                make: null,
+                model: null
+            }));
+        }
     }
-    */
 }
 
 /**
@@ -234,7 +244,9 @@ async function loadStopNames(operatorKey) {
 
         const response = await fetch(`${config.baseUrl}${config.endpoints.stops}`, { timeout: 10000 });
         if (response.ok) {
-            const data = await response.json();
+            const rawData = await response.json();
+            const data = normalizeArrivalData(operatorKey, 'stops', rawData);
+
             // Itera sobre todas as paragens para popular as caches de nomes e patterns
             data.forEach(stop => {
                 // Se o status for 'voided', marca como desativada
