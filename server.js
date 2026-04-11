@@ -448,7 +448,7 @@ app.post('/api/arrivals', async (req, res) => {
 
 // Serve a página principal
 app.get('/', (_, res) => {
-    res.sendFile(path.join(__dirname, 'www', 'mbst_cmet.html'));
+    res.sendFile(path.join(__dirname, 'www', 'mtst_aml.html'));
 });
 
 // Inicialização do Servidor
