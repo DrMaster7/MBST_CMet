@@ -9,16 +9,16 @@ const path = require('path');        // Utilitário para manipular caminhos de d
 const app = express();               // Inicialização da aplicação Express
 const fs = require('fs');            // Sistema de ficheiros nativos do Node.js
 
-// Definição das configurações das APIs dos operadores (atualmente somente a Carris Metropolitana funciona)
+// Definição das configurações das APIs dos operadores (atualmente somente a Carris Metropolitana funciona com tempo real)
 const OPERATORS_CONFIG = {
     'ccfl': {
-        name: 'Carris (CCFL)',
+        name: 'Carris',
         gtfsPath: path.join(__dirname, 'gtfs', 'ccfl'),
         isStatic: true, // Flag para diferenciar de APIs de tempo real
         endpoints: {}
     },
     'cmet': { 
-        name: 'Carris Metropolitana (CMet)',
+        name: 'Carris Metropolitana',
         baseUrl: 'https://api.carrismetropolitana.pt/', // URL base da Carris Metropolitana
         endpoints: {
             arrivals: 'v2/arrivals/by_stop/',           // Endpoint para as chegadas (em tempo real)
@@ -28,7 +28,7 @@ const OPERATORS_CONFIG = {
         }
     },
     'cp': {
-        name: 'Comboios de Portugal (CP)',
+        name: 'Comboios de Portugal',
         gtfsPath: path.join(__dirname, 'gtfs', 'cp'),
         isStatic: true,
         endpoints: {}
@@ -40,20 +40,16 @@ const OPERATORS_CONFIG = {
         endpoints: {}
     },
     'ml': {
-        name: 'Metro de Lisboa (ML)',
+        name: 'Metro de Lisboa',
         gtfsPath: path.join(__dirname, 'gtfs', 'ml'),
         isStatic: true,
         endpoints: {}
     },
     'mst': {
-        name: 'Metro Sul do Tejo (MST)',
-        baseUrl: '',                                    // URL base do Metro Sul do Tejo
-        endpoints: {
-            arrivals: '',                               // Endpoint para as chegadas (em tempo real)
-            patterns: '',                               // Endpoint para detalhes de percursos (patterns)
-            stops: '',                                  // Endpoint para lista de paragens
-            vehicles: ''                                // Endpoint para a frota
-        }
+        name: 'Metro Sul do Tejo',
+        gtfsPath: path.join(__dirname, 'gtfs', 'mst'),
+        isStatic: true,
+        endpoints: {}
     },
     'mobi': {
         name: 'MobiCascais',
@@ -62,13 +58,13 @@ const OPERATORS_CONFIG = {
         endpoints: {}
     },
     'tcb': {
-        name: 'Transportes Coletivos do Barreiro (TCB)',
+        name: 'Transportes Coletivos do Barreiro',
         gtfsPath: path.join(__dirname, 'gtfs', 'tcb'),
         isStatic: true,
         endpoints: {}
     },
     'ttsl': {
-        name: 'Transtejo Soflusa (TTSL)',
+        name: 'Transtejo Soflusa',
         gtfsPath: path.join(__dirname, 'gtfs', 'ttsl'),
         isStatic: true,
         endpoints: {}
@@ -105,13 +101,14 @@ Object.keys(OPERATORS_CONFIG).forEach(op => {
 // A cache de patterns (destino final) separada por IDs únicos.
 // Cache para dados estáticos do GTFS
 let staticDataCache = {
-    ccfl: { routes: [], stops: {}, stopTimes: [], trips: [] },
-    cp: { routes: [], stops: {}, stopTimes: [], trips: [] },
-    ft: { routes: [], stops: {}, stopTimes: [], trips: [], vehicles: [] },
-    ml: { routes: [], stops: {}, stopTimes: [], trips: [] },
-    mobi: { routes: [], stops: {}, stopTimes: [], trips: [], vehicles: [] },
-    tcb: { routes: [], stops: {}, stopTimes: [], trips: [] },
-    ttsl: { routes: [], stops: {}, stopTimes: [], trips: [] }
+    ccfl: { calendar: {}, routes: {}, stops: {}, stopTimes: {}, trips: {} },
+    cp: { calendar: {}, routes: {}, stops: {}, stopTimes: {}, trips: {} },
+    ft: { calendar: {}, routes: {}, stops: {}, stopTimes: {}, trips: {}, vehicles: {} },
+    ml: { calendar: {}, routes: {}, stops: {}, stopTimes: {}, trips: {} },
+    mst: { calendar: {}, routes: {}, stops: {}, stopTimes: {}, trips: {}, vehicles: {} },
+    mobi: { calendar: {}, routes: {}, stops: {}, stopTimes: {}, trips: {}, vehicles: {} },
+    tcb: { calendar: {}, routes: {}, stops: {}, stopTimes: {}, trips: {} },
+    ttsl: { calendar: {}, routes: {}, stops: {}, stopTimes: {}, trips: {} }
 };
 
 const parseCSV = (filePath) => {
@@ -138,29 +135,72 @@ function loadStaticGTFS(opKey) {
     try {
         console.log(`A carregar GTFS para ${opKey}...`);
         
+        staticDataCache[opKey] = {
+            stops: {},
+            trips: {},
+            routes: {},
+            stopTimesByStop: {},
+            calendar: {},
+            calendarDates: {},
+            parentToChildren: {}
+        };
+
         // Carrega e indexa paragens
         const stopsArr = parseCSV(path.join(config.gtfsPath, 'stops.txt'));
-        staticDataCache[opKey].stops = {};
-        stopsArr.forEach(s => { staticDataCache[opKey].stops[s.stop_id] = s.stop_name; });
+        stopsArr.forEach(s => { 
+            staticDataCache[opKey].stops[s.stop_id] = s.stop_name; 
+            
+            if (s.parent_station) {
+                if (!staticDataCache[opKey].parentToChildren[s.parent_station]) {
+                    staticDataCache[opKey].parentToChildren[s.parent_station] = [];
+                }
+                staticDataCache[opKey].parentToChildren[s.parent_station].push(s.stop_id);
+            }
+        });
 
         // Indexa Routes por ID
         const routesArr = parseCSV(path.join(config.gtfsPath, 'routes.txt'));
-        staticDataCache[opKey].routes = {};
         routesArr.forEach(r => { staticDataCache[opKey].routes[r.route_id] = r; });
 
         // Indexa Trips por ID
         const tripsArr = parseCSV(path.join(config.gtfsPath, 'trips.txt'));
-        staticDataCache[opKey].trips = {};
         tripsArr.forEach(t => { staticDataCache[opKey].trips[t.trip_id] = t; });
 
         // Agrupa Stop Times por Stop ID
         const allStopTimes = parseCSV(path.join(config.gtfsPath, 'stop_times.txt'));
-        staticDataCache[opKey].stopTimesByStop = {};
         allStopTimes.forEach(st => {
             if (!staticDataCache[opKey].stopTimesByStop[st.stop_id]) {
                 staticDataCache[opKey].stopTimesByStop[st.stop_id] = [];
             }
             staticDataCache[opKey].stopTimesByStop[st.stop_id].push(st);
+        });
+
+        const calendarArr = parseCSV(path.join(config.gtfsPath, 'calendar.txt'));
+        calendarArr.forEach(row => {
+            staticDataCache[opKey].calendar[row.service_id] = {
+                monday: row.monday === '1',
+                tuesday: row.tuesday === '1',
+                wednesday: row.wednesday === '1',
+                thursday: row.thursday === '1',
+                friday: row.friday === '1',
+                saturday: row.saturday === '1',
+                sunday: row.sunday === '1',
+                start_date: row.start_date,
+                end_date: row.end_date
+            };
+        });
+
+        const calendarDatesArr = parseCSV(path.join(config.gtfsPath, 'calendar_dates.txt'));
+        staticDataCache[opKey].calendarDates = {};
+        calendarDatesArr.forEach(cd => {
+            // Formato da chave: "YYYYMMDD"
+            if (!staticDataCache[opKey].calendarDates[cd.date]) {
+                staticDataCache[opKey].calendarDates[cd.date] = [];
+            }
+            staticDataCache[opKey].calendarDates[cd.date].push({
+                service_id: cd.service_id,
+                exception_type: cd.exception_type // 1 = Adicionado, 2 = Removido
+            });
         });
 
         console.log(`GTFS ${opKey} indexado com sucesso.`);
@@ -412,6 +452,10 @@ app.post('/api/arrivals', async (req, res) => {
         if (!Array.isArray(operators) || !Array.isArray(stopIds)) {
             return res.status(400).json({ error: 'Pedido inválido.' });
         }
+        const now = new Date();
+        const currentTime = new Date().toTimeString().split(' ')[0]; // Formato "HH:MM:SS"
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+        const todayName = days[now.getDay()];
 
         // Processa as paragens em paralelo, mas de forma isolada
         const results = await Promise.all(stopIds.map(async (id) => {
@@ -426,23 +470,66 @@ app.post('/api/arrivals', async (req, res) => {
 
                     if (stopName) {
                         // Busca instantânea pelo ID da paragem
-                        const stopPassages = opStatic.stopTimesByStop[id] || [];
+                        let stopPassages = opStatic.stopTimesByStop[id] || [];
+                        if (opStatic.parentToChildren[id]) {
+                            opStatic.parentToChildren[id].forEach(childId => {
+                                if (opStatic.stopTimesByStop[childId]) {
+                                    stopPassages = stopPassages.concat(opStatic.stopTimesByStop[childId]);
+                                }
+                            });
+                        }
                         
-                        const data = stopPassages.slice(0, 50).map(passage => {
+                        const data = stopPassages
+                        .filter(passage => {
+                            const todayDateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+                            const trip = opStatic.trips[passage.trip_id];
+                            const serviceId = trip?.service_id;
+
+                            const exceptions = opStatic.calendarDates[todayDateStr] || [];
+                            const addedEx = exceptions.find(e => e.service_id === serviceId && e.exception_type === '1');
+                            const removedEx = exceptions.find(e => e.service_id === serviceId && e.exception_type === '2');
+
+                            if (addedEx) return true;
+                            if (removedEx) return false;
+
+                            const service = opStatic.calendar[trip.service_id];
+                            if (!service) return false;
+
+                            const isActiveToday = service[todayName];
+                            const isFuture = passage.arrival_time >= currentTime;
+
+                            return isActiveToday && isFuture;
+                        })
+                        .map(passage => {
                             const trip = opStatic.trips[passage.trip_id];
                             const route = trip ? opStatic.routes[trip.route_id] : null;
                             
                             let lineId = route?.route_short_name || "Linha";
                             let headsign = trip?.trip_headsign || route?.route_long_name || "Destino";
 
-                            if (opKey === 'ccfl') {
-                                headsign = headsign.split(' - ').pop().trim();
-                            }
                             if (opKey === 'cp') {
                                 lineId = lineId.replace(/^Linha d[oae]s?\s+/gi, '').trim();
                             }
+                            if (opKey === 'ml') {
+                                lineId = route?.route_long_name || "Linha";
+                            }
+                            if (opKey === 'mst') {
+                                headsign = headsign.split(' - ').pop().trim();
+                            }
                             if (opKey === 'tcb') {
-                                headsign = headsign.replace(/^\S+\s+/, '').trim();
+                                // Remove o código inicial (ex: "123 "), limpa espaços e converte para minúsculas
+                                headsign = headsign.replace(/^\S+\s+/, '').trim().toLowerCase();
+
+                                // Lista de conectores que devem permanecer em minúsculas
+                                const exceptions = ['da', 'de', 'do', 'das', 'dos', 'e', 'via'];
+
+                                headsign = headsign.split(' ').map((word, index) => {
+                                    // Capitaliza a primeira palavra ou qualquer palavra que não esteja na lista de exceções
+                                    if (index === 0 || !exceptions.includes(word)) {
+                                        return word.charAt(0).toUpperCase() + word.slice(1);
+                                    }
+                                    return word;
+                                }).join(' ');
                             }
 
                             return {
@@ -451,11 +538,14 @@ app.post('/api/arrivals', async (req, res) => {
                                 scheduled_arrival: passage.arrival_time,
                                 realtime: false
                             };
-                        });
+                        })
+                        .filter(item => item.headsign.trim().toLowerCase() !== stopName.trim().toLowerCase())
+                        .sort((a, b) => a.scheduled_arrival.localeCompare(b.scheduled_arrival))
+                        .slice(0, 50);
 
-                        return { stopId: id, stopName: stopName, operator: opKey, data: data };
+                        return { stopId: id, stopName: stopName, operator: opKey, operatorName: config.name, data: data };
                     }
-                } 
+                }
                 // Dados em tempo real
                 else {
                     if (!caches[opKey].isLoaded) await loadStopNames(opKey);
@@ -471,7 +561,7 @@ app.post('/api/arrivals', async (req, res) => {
                             vehicleDetails: caches[opKey].vehicles[arrival.vehicle_id] || null
                         }));
 
-                        return { ...stopData, data: dataWithDetails, operator: opKey, stopName: stopName };
+                        return { ...stopData, data: dataWithDetails, operator: opKey, operatorName: config.name, stopName: stopName };
                     }
                 }
             }

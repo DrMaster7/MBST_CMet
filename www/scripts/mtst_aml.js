@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (linkShowId) {
         linkShowId.addEventListener('click', (e) => {
             e.preventDefault(); // Impede que a página salte para o topo
-            alert('ID é a identidade de uma paragem (ex: 020001). No site da Carris Metropolitana, está localizada na parte superior da página da paragem, acima do nome. No terreno, está localizada na parte inferior do semi-círculo amarelo dos postaletes. Para mais informações consulte o README, localizado na pasta e no GitHub da aplicação.');
+            alert('ID é a identidade de uma paragem (ex: 4504 (Carris); 020001 (CMet); 94_91058 (CP); FTStop1 (Fertagus); CG (ML); 6 (MST e TTSL); 20078 (MobiCascais); 000095 (TCB)). No site da Carris Metropolitana (apenas para os IDs da mesma), está localizada na parte superior da página da paragem, acima do nome. No terreno, está localizada na parte inferior do semi-círculo amarelo dos postaletes. Para mais informações consulte o README, localizado na pasta e no GitHub da aplicação.');
         });
     }
 
@@ -226,7 +226,7 @@ function renderArrivals(results, container, mode) {
     } else { // Se o modo da tabela no modo 'individual'
         // No modo individual, cria um grupo por cada paragem pesquisada
         results.forEach(r => groups.push({ 
-            title: `${r.stopId} | ${r.stopName || 'Paragem Inexistente'}`, 
+            title: `${r.stopId} (${r.operatorName || r.operator}) | ${r.stopName || 'Paragem Inexistente'}`, 
             arrivals: (r.data || []).filter(isFutureArrival), 
             error: r.error 
         }));
@@ -250,7 +250,7 @@ function renderArrivals(results, container, mode) {
         const processed = processArrivals(group.arrivals);
 
         // Se após o processamento não houver dados, mostra aviso de não haver chegadas (caso contrário cria a tabela)
-        html += (processed.length === 0) ? `<p class="no-arrivals">Nenhum autocarro calendarizado nos próximos 60 minutos.</p>` 
+        html += (processed.length === 0) ? `<p class="no-arrivals">Nenhum serviço calendarizado nos próximos 60 minutos.</p>` 
         : generateTableHtml(processed, mode);
 
         div.innerHTML = html;
@@ -408,7 +408,7 @@ function parseScheduledTime(ts, retStamp = false) {
     let date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h % 24, m, s || 0);
     let stamp = date.getTime();
 
-    // Se a hora já passou há muito (ex: autocarro da 01:00, listado às 23:00), assume-se que o horário é de amanhã
+    // Se a hora já passou há muito (ex: serviço da 01:00, listado às 23:00), assume-se que o horário é de amanhã
     if (stamp < now.getTime() - 3600000) stamp += 86400000;
     return retStamp ? stamp : stamp;
 }
